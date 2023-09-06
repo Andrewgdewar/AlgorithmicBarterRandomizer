@@ -1,0 +1,98 @@
+{
+    "en": {
+        "handover": "Hand over the <alternateName> (<alternateShortName>)",
+        "find": "Find <alternateName> in raid",
+        "armor": "Obtain <alternateName> with <minDurability>-<maxDurability>% durability",
+        "obtain": "Obtain <alternateName>"
+    },
+    "ch": {
+        "handover": "交出 <alternateName> (<alternateShortName>)",
+        "find": "找到<alternateName>",
+        "armor": "获得 <minDurability>-<maxDurability>% 耐久度的 <alternateName>",
+        "obtain": "获取 <alternateName>"
+    },
+    "cz": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "fr": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "ge": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "hu": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "it": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "jp": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "kr": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "pl": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "po": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "sk": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "es": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "es-mx": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "tu": {
+        "handover": "",
+        "find": "",
+        "armor": "",
+        "obtain": ""
+    },
+    "ru": {
+        "handover": "Передать <alternateName> (<alternateShortName>)",
+        "find": "Найти в рейде <alternateName>",
+        "armor": "Найти и передать <alternateName> <minDurability>-<maxDurability>% прочности",
+        "obtain": "Найти и передать <alternateName>"
+    }
+}

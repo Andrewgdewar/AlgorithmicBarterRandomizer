@@ -1,0 +1,14 @@
+{
+    "enable": true,
+    "difficulty": "medium",
+    "EXAMPLE_DIFFICULTY_Values_FOR_ABOVE": [
+        "easy",
+        "medium",
+        "hard",
+        "masochist",
+        "random"
+    ],
+    "maxQuantityModifier": 1.8,
+    "seed": 21231231,
+    "debug": false
+}
