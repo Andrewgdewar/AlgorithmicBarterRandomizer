@@ -5,10 +5,15 @@
         "easy",
         "medium",
         "hard",
-        "masochist",
-        "random"
+        "masochist"
     ],
-    "maxQuantityModifier": 1.8,
-    "seed": 21231231,
+    "enableHardcore": true,
+    "hardcoreSettings": {
+        "cashItemCutoff": 15000,
+        "disableFlee": true,
+        "sellPriceNerf": true
+    },
+    "seed": 1990,
+    "debugCashItems": false,
     "debug": false
 }

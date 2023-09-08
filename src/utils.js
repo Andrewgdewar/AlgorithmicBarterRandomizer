@@ -3,10 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkParentRecursive = exports.seededRandom = exports.saveToFile = exports.stringToNum = exports.moneyParent = exports.keyParent = void 0;
+exports.checkParentRecursive = exports.seededRandom = exports.saveToFile = exports.stringToNum = void 0;
 const config_json_1 = __importDefault(require("../config/config.json"));
-exports.keyParent = "543be5e94bdc2df1348b4568";
-exports.moneyParent = "543be5dd4bdc2deb348b4569";
 const chars = " abcdefghijklmnopqrstuvwxyz1234567890".split("");
 const stringToNum = (str) => {
     if (!str)
@@ -35,12 +33,8 @@ const saveToFile = (data, filePath) => {
     });
 };
 exports.saveToFile = saveToFile;
-// in order to work 'Math.seed' must NOT be undefined,
-// so in any case, you HAVE to provide a Math.seed
-const seededRandom = (max, min, target) => {
+const seededRandom = (min, max, target) => {
     const targetSeed = (0, exports.stringToNum)(target);
-    max = max || 1;
-    min = min || 0;
     let seed = config_json_1.default.seed + targetSeed;
     seed = (seed * 9301 + 49297) % 233280;
     var rnd = seed / 233280;

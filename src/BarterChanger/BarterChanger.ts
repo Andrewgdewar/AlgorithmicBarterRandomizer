@@ -1,7 +1,13 @@
+import { ILogger } from './../../types/models/spt/utils/ILogger.d';
 import { DatabaseServer } from "@spt-aki/servers/DatabaseServer";
 import { DependencyContainer } from "tsyringe";
-import config from "../../config/config.json";
-import { IQuest } from "@spt-aki/models/eft/common/tables/IQuest";
+import config from "../../config/config.json"
+import { ammoParent, difficulties, excludableParents, excludedItemsList, moneyType } from "./BarterChangerUtils";
+import { checkParentRecursive, seededRandom } from "../utils";
+import { IBarterScheme } from '@spt-aki/models/eft/common/tables/ITrader';
+import { RagfairServer } from "@spt-aki/servers/RagfairServer";
+import { LogTextColor } from "@spt-aki/models/spt/logging/LogTextColor";
+
 
 const fs = require("fs");
 
@@ -10,107 +16,174 @@ export default function BarterChanger(
 ): undefined {
     const tables = container.resolve<DatabaseServer>("DatabaseServer").getTables();
     const items = tables.templates.items;
-    const quests = tables.templates.quests as unknown as Record<string, IQuest>;
+    const flee = tables.globals.config.RagFair;
+    const ragFairServer = container.resolve<RagfairServer>("RagfairServer");
+    const prices = tables.templates.prices
+    const logger = container.resolve<ILogger>("WinstonLogger")
+    const traders = tables.traders
+
+    if (config.enableHardcore) {
+        if (config.hardcoreSettings.disableFlee) flee.minUserLevel = 99
+        if (config.hardcoreSettings.sellPriceNerf) {
+            Object.keys(traders).forEach((traderId) => {
+                traders[traderId].base?.loyaltyLevels.forEach((_, index) => {
+                    traders[traderId].base.loyaltyLevels[index].buy_price_coef *= 1.2
+                })
+            })
+        }
+    }
+
+    const tradersToInclude = new Set([
+        "Prapor",
+        "Therapist",
+        "Skier",
+        "Peacekeeper",
+        "Mechanic",
+        "Ragman",
+        "Jaeger"
+    ])
+
+    const loot = tables.loot.staticLoot
+    const lootList = new Set(
+        Object.values(loot)
+            .map(({ itemDistribution }) => itemDistribution)
+            .flat(1).map(({ tpl }) => tpl))
+    const filterLootList = [...lootList].filter(id => !checkParentRecursive(id, items, excludableParents))
+
+    const getName = (id: string) => {
+        const itemNameId = `${id} Name`
+        const itemShortNameId = `${id} ShortName`
+        return `${local[itemNameId]} (${local[itemShortNameId]})`
+    }
 
     const locales = tables.locales
     const local = locales.global.en
 
-    const loot = tables.loot.staticLoot
-    const lootList = Object.values(loot).map(({ itemDistribution }) => itemDistribution).flat(1)
+    const handbook = tables.templates.handbook
 
-    // const changeItems = {}
-    // const parentMapper = {} as Record<string, Record<string, number>>
+    const handbookMapper = {} as Record<string, number>
 
+    handbook.Items.forEach(({ Id, Price }) => {
+        handbookMapper[Id] = Price
+    })
 
-    // lootList.forEach(({ tpl, relativeProbability }) => {
-    //     if (checkParentRecursive(tpl, items, [keyParent])) return;
-    //     if (changeItems[tpl]) {
-    //         changeItems[tpl] = changeItems[tpl] + relativeProbability
-    //     } else {
-    //         changeItems[tpl] = relativeProbability
-    //     }
+    const getPrice = (id: string): number | undefined => {
+        if (prices[id] && !isNaN(prices[id])) return prices[id]
+        if (handbookMapper[id] && !isNaN(handbookMapper[id])) return handbookMapper[id]
+    }
 
-    //     if (parentMapper?.[items[tpl]._parent]?.[tpl]) {
-    //         parentMapper[items[tpl]._parent][tpl] = parentMapper[items[tpl]._parent][tpl] + relativeProbability
-    //     } else {
-    //         parentMapper[items[tpl]._parent] = { ...parentMapper[items[tpl]._parent] || {}, [tpl]: relativeProbability }
-    //     }
-    // })
+    const cutLootList = [...filterLootList].sort((a, b) => getPrice(a) - getPrice(b))
 
-    // const getAlternate = (target: string, currentlyUsed: Set<string>, questId: string, parent: string, value?: number) => {
-    //     let quantity = Number(value)
-    //     const { high, low } = difficulties[config.difficulty]
-    //     const itemsParent = items[target]._parent
-    //     const itemsRarity = parentMapper[itemsParent][target]
-    //     const alternates = Object.keys(parentMapper[itemsParent]).filter(itemId => {
-    //         if (itemId === target || currentlyUsed.has(itemId + parent)) return false
-    //         const rarity = parentMapper[itemsParent][itemId]
-    //         return itemsRarity * high > rarity && rarity * low > itemsRarity
-    //     })
-    //     const alternateIndex = seededRandom(alternates.length - 1, 0, target + questId)
-    //     const alternateId = alternates[alternateIndex]
-    //     const alternateRarity = changeItems[alternateId]
+    const getAlt = (randomSeed: string, totalCost: number, isCash = false) => {
+        let maxKey = -1 + cutLootList.findIndex((id) => getPrice(id) > totalCost)
+        if (maxKey >= 0 && maxKey < 5) maxKey = 10
+        if (maxKey < 0) maxKey = cutLootList.length - 1
+        if (!cutLootList[maxKey]) {
+            logger.error(`Unable to find 'cutLootList[maxKey]' `)
+            return ""
+        }
+        let minKey = Math.round(maxKey * (maxKey > 200 ? 0.9 : (isCash ? 0.8 : 0.4)))
+        const newKey = seededRandom(minKey, maxKey, randomSeed)
+        const newId = cutLootList[newKey]
+        // console.log(minKey, maxKey, totalCost, prices[newId], getName(newId))
+        if (!newId) {
+            logger.error(`Unable to find 'newId' random seed ${randomSeed} new key${newKey} ${minKey}${maxKey}`)
+            return ""
+        }
+        return newId
+    }
 
+    const getNewBarterList = (randomSeed: string, ongoingCost: number = 0, newBarterList: IBarterScheme[] = [], originalTotalCost: number, isCash: boolean = false) => {
+        const { ongoing, multiplier } = difficulties[config.difficulty]
+        const totalRemaining = originalTotalCost - ongoingCost
+        const newId = getAlt(randomSeed, totalRemaining, isCash)
+        if (!newId) return undefined
+        const multipliedValue = multiplier * getPrice(newId)
+        let itemCount = Math.round(totalRemaining / multipliedValue) || 1
+        if (itemCount > 15) itemCount = 15
+        if (!newBarterList.length && itemCount > 5 && itemCount < 15) {
+            itemCount = 5
+        }
+        const cost = multipliedValue * itemCount
+        //getName(newId) + cost
+        if (config.debug || (isCash && config.debugCashItems)) logger.logWithColor(`${itemCount} x ${getName(newId)} ${itemCount * getPrice(newId)}`, LogTextColor.GREEN)
+        newBarterList.push({ _tpl: newId, count: itemCount })
 
-    //     let newCount = quantity * (alternateRarity / itemsRarity)
-    //     if (newCount > (quantity * config.maxQuantityModifier)) newCount = quantity * config.maxQuantityModifier
-    //     if (newCount < 1/* || checkParentRecursive(parent, items, [""])*/) newCount = 1
-    //     return { alternateId, quantity: Math.round(newCount) }
-    // }
-    // let fixedVisibilityRefs = 0
-    // let numOfChangedItems = 0
+        ongoingCost = Math.round(ongoingCost + cost)
 
-    // Object.keys(quests).forEach(questId => {
-    //     const quest = quests[questId]
-    //     let changed = false
+        if ((ongoingCost * ongoing) > originalTotalCost) return newBarterList
 
-    //     const currentlyUsed = new Set([])
-    //     quest.conditions?.AvailableForFinish.forEach(({ _props, _parent }, index) => {
-    //         if (_parent === "FindItem" || _parent === "HandoverItem") {
+        return getNewBarterList(randomSeed + ongoingCost, ongoingCost, newBarterList, originalTotalCost, isCash)
+    }
 
-    //             if (!_props?.target) return;
-    //             const target = _props.target?.[0] || _props.target as string;
+    let tradeItemsChanged = 0
+    let cashItemsChanged = 0
 
-    //             if (changeItems[target] && !checkParentRecursive(target, items, [moneyParent])) {
-    //                 const { alternateId, quantity } = getAlternate(target, currentlyUsed, questId, _parent, _props.value)
-    //                 if (!alternateId || !items[alternateId]) return config.debug && console.log('Not Changing Item: ', items[target]?._name, target)
-    //                 const questReqId = replaceTextForQuest(locales, _props.id, target, alternateId, questId, _props)
-    //                 if (!questReqId) return config.debug && console.log('Not Changing Item: ', items[target]?._name, target)
-    //                 const propsIdCopy = _props.id
-    //                 quests[questId].conditions.AvailableForFinish[index]._props.id = questReqId
+    Object.keys(traders).forEach((traderId) => {
+        const trader = traders[traderId]
+        const name = trader.base.nickname
+        if (!tradersToInclude.has(name)) return
+        const barters = trader.assort.barter_scheme
+        const tradeItemMapper = {}
+        trader.assort.items.forEach(item => {
+            tradeItemMapper[item._id] = item._tpl
+        })
 
-    //                 if (typeof _props.target === "string") {
-    //                     quests[questId].conditions.AvailableForFinish[index]._props.target = alternateId
-    //                 } else {
-    //                     quests[questId].conditions.AvailableForFinish[index]._props.target = _props.target.map(() => alternateId)
-    //                 }
+        Object.keys(barters).forEach(barterId => {
+            const itemId = tradeItemMapper[barterId]
+            const barter = barters[barterId]
+            if (!barter?.[0]?.[0]?._tpl) return
+            const offer = ragFairServer.getOffer(barterId)
+            let value = getPrice(itemId)
+            switch (true) {
+                case moneyType.has(barter[0][0]._tpl): //MoneyValue
+                    if (!config.enableHardcore || checkParentRecursive(itemId, items, [ammoParent])) break;
 
-    //                 const itemShortNameId = `${target} Name`
-    //                 const alternateNameId = `${alternateId} Name`
-    //                 const itemName = local[itemShortNameId]
-    //                 const alternateName = local[alternateNameId]
+                    if (isNaN(value)) value = barter[0][0].count
+                    if (isNaN(value)) break;
+                    if (value < config.hardcoreSettings.cashItemCutoff) return;
+                    config.debugCashItems && logger.logWithColor(`${getName(itemId)}`, LogTextColor.YELLOW)
+                    config.debugCashItems && logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor.BLUE)
+                    const newCashBarter = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, true)
+                    config.debugCashItems && console.log("\n")
 
-    //                 if (config.debug && _parent === "HandoverItem") { console.log("Switching:", itemName, Number(_props.value), "====>", quantity, alternateName, changeItems[target], changeItems[alternateId]) }
+                    if (!newCashBarter || !newCashBarter.length) break;
+                    cashItemsChanged++
 
-    //                 (quests[questId].conditions.AvailableForFinish[index]._props.value as any) = quantity.toString()
+                    offer.requirements = newCashBarter.map((barterInfo: { _tpl: string, count: number }) => ({ ...barterInfo, onlyFunctional: false }))
+                    barter[0] = newCashBarter
+                    break;
+                default:
+                    config.debug && logger.logWithColor(`${getName(itemId)}`, LogTextColor.YELLOW)
+                    let totalCost = 0
 
-    //                 quest.conditions?.AvailableForFinish.forEach(({ _props: { visibilityConditions } }, internalIndex) => {
-    //                     if (internalIndex === index || !visibilityConditions) return;
-    //                     visibilityConditions.forEach((condition, conditionIndex) => {
-    //                         if ((condition as any)?._props?.target.includes(propsIdCopy)) {
-    //                             fixedVisibilityRefs++
-    //                             (quest.conditions.AvailableForFinish[internalIndex]._props.visibilityConditions[conditionIndex] as any)._props.target = questReqId
-    //                         }
-    //                     })
-    //                 })
+                    barter[0].forEach(({ count, _tpl }) => {
+                        if (excludedItemsList.has(_tpl)) return
+                        config.debug && logger.logWithColor(`${count} x ${getName(_tpl)}`, LogTextColor.BLUE)
+                        totalCost += (count * getPrice(_tpl))
+                    })
 
-    //                 numOfChangedItems++
-    //                 changed = true
-    //                 currentlyUsed.add(alternateId + _parent)
-    //             }
-    //         }
-    //     })
-    // })
-    // config.debug && console.log("Fixed", fixedVisibilityRefs, "visibilty references, thanks EthicsGradient!")
-    // console.log('AlgorithmicBarterRandomizer: Successfully changed:', numOfChangedItems, "quest items with seed:", config.seed)
+                    config.debug && logger.info(`========================= original cost ${totalCost} Actual cost > ${value}`)
+
+                    if (isNaN(value)) {
+                        config.debug && logger.info(`No price info attempting override`)
+                        if (!isNaN(totalCost)) value = totalCost
+                        else return config.debug && logger.info(`Unable to Override!!!! Skipping`)
+                    }
+
+                    const newBarters = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value)
+
+                    config.debug && console.log("\n")
+
+                    if (!newBarters || !newBarters.length) break;
+                    tradeItemsChanged++
+                    offer.requirements = newBarters.map((barterInfo: { _tpl: string, count: number }) => ({ ...barterInfo, onlyFunctional: false }))
+                    barter[0] = newBarters
+                    break;
+            }
+        })
+    })
+
+    logger.info(`AlgorithmicBarterRandomizer: Changed ${tradeItemsChanged} trade items and ${cashItemsChanged} cash items`)
 }
+

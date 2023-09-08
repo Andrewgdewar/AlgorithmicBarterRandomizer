@@ -1,8 +1,6 @@
 import { ITemplateItem } from "@spt-aki/models/eft/common/tables/ITemplateItem"
 import config from "../config/config.json";
 
-export const keyParent = "543be5e94bdc2df1348b4568"
-export const moneyParent = "543be5dd4bdc2deb348b4569"
 const chars = " abcdefghijklmnopqrstuvwxyz1234567890".split("")
 
 export const stringToNum = (str: string) => {
@@ -29,12 +27,8 @@ export const saveToFile = (data, filePath) => {
     });
 }
 
-// in order to work 'Math.seed' must NOT be undefined,
-// so in any case, you HAVE to provide a Math.seed
-export const seededRandom = (max: number, min: number, target?: string) => {
+export const seededRandom = (min: number, max: number, target?: string) => {
     const targetSeed = stringToNum(target)
-    max = max || 1;
-    min = min || 0;
     let seed = config.seed + targetSeed
     seed = (seed * 9301 + 49297) % 233280;
     var rnd = seed / 233280;
