@@ -16,17 +16,8 @@ function BarterChanger(container) {
     const prices = tables.templates.prices;
     const logger = container.resolve("WinstonLogger");
     const traders = tables.traders;
-    if (config_json_1.default.enableHardcore) {
-        if (config_json_1.default.hardcoreSettings.disableFlee)
-            flee.minUserLevel = 99;
-        if (config_json_1.default.hardcoreSettings.sellPriceNerf) {
-            Object.keys(traders).forEach((traderId) => {
-                traders[traderId].base?.loyaltyLevels.forEach((_, index) => {
-                    traders[traderId].base.loyaltyLevels[index].buy_price_coef *= 1.2;
-                });
-            });
-        }
-    }
+    if (config_json_1.default.enableHardcore && config_json_1.default.hardcoreSettings.disableFlee)
+        flee.minUserLevel = 99;
     const tradersToInclude = new Set([
         "Prapor",
         "Therapist",
@@ -34,7 +25,8 @@ function BarterChanger(container) {
         "Peacekeeper",
         "Mechanic",
         "Ragman",
-        "Jaeger"
+        "Jaeger",
+        ...config_json_1.default.customTradersToInclude
     ]);
     const loot = tables.loot.staticLoot;
     const lootList = new Set(Object.values(loot)
@@ -53,7 +45,9 @@ function BarterChanger(container) {
     handbook.Items.forEach(({ Id, Price }) => {
         handbookMapper[Id] = Price;
     });
-    const getPrice = (id) => {
+    const getPrice = (id, reverse = false) => {
+        if (reverse && handbookMapper[id] && !isNaN(handbookMapper[id]))
+            return handbookMapper[id];
         if (prices[id] && !isNaN(prices[id]))
             return prices[id];
         if (handbookMapper[id] && !isNaN(handbookMapper[id]))
@@ -70,7 +64,7 @@ function BarterChanger(container) {
             logger.error(`Unable to find 'cutLootList[maxKey]' `);
             return "";
         }
-        let minKey = Math.round(maxKey * (maxKey > 200 ? 0.9 : (isCash ? 0.8 : 0.4)));
+        let minKey = Math.round(maxKey * (isCash ? 0.7 : (maxKey > 200 ? 0.9 : 0.4)));
         const newKey = (0, utils_1.seededRandom)(minKey, maxKey, randomSeed);
         const newId = cutLootList[newKey];
         // console.log(minKey, maxKey, totalCost, prices[newId], getName(newId))
@@ -110,6 +104,30 @@ function BarterChanger(container) {
         const name = trader.base.nickname;
         if (!tradersToInclude.has(name))
             return;
+        if (config_json_1.default.enableHardcore) {
+            //reduceTraderLoyaltySpendRequirement
+            if (config_json_1.default.hardcoreSettings.reduceTraderLoyaltySpendRequirement) {
+                trader.base?.loyaltyLevels.forEach((_, index) => {
+                    if (trader.base?.loyaltyLevels[index].minSalesSum)
+                        trader.base.loyaltyLevels[index].minSalesSum *= 0.2;
+                });
+            }
+            //IncreaseMinBuyCounts
+            if (config_json_1.default.hardcoreSettings.increaseMinBuyCounts) {
+                trader?.assort?.items.forEach((_, index) => {
+                    const restriction = trader?.assort?.items[index]?.upd?.BuyRestrictionMax;
+                    if (restriction && restriction < 5)
+                        trader.assort.items[index].upd.BuyRestrictionMax = 5;
+                });
+            }
+            //reduceTraderBuyPrice
+            if (config_json_1.default.hardcoreSettings.reduceTraderBuyPrice) {
+                trader.base?.loyaltyLevels.forEach((_, index) => {
+                    if (trader?.base?.loyaltyLevels?.[index])
+                        trader.base.loyaltyLevels[index].buy_price_coef *= 1.5;
+                });
+            }
+        }
         const barters = trader.assort.barter_scheme;
         const tradeItemMapper = {};
         trader.assort.items.forEach(item => {
@@ -124,13 +142,13 @@ function BarterChanger(container) {
             let value = getPrice(itemId);
             switch (true) {
                 case BarterChangerUtils_1.moneyType.has(barter[0][0]._tpl): //MoneyValue
-                    if (!config_json_1.default.enableHardcore || (0, utils_1.checkParentRecursive)(itemId, items, [BarterChangerUtils_1.ammoParent]))
+                    if (!config_json_1.default.enableHardcore || (0, utils_1.checkParentRecursive)(itemId, items, BarterChangerUtils_1.excludableCashParents))
                         break;
                     if (isNaN(value))
                         value = barter[0][0].count;
                     if (isNaN(value))
                         break;
-                    if (value < config_json_1.default.hardcoreSettings.cashItemCutoff)
+                    if (getPrice(itemId, true) < config_json_1.default.hardcoreSettings.cashItemCutoff)
                         return;
                     config_json_1.default.debugCashItems && logger.logWithColor(`${getName(itemId)}`, LogTextColor_1.LogTextColor.YELLOW);
                     config_json_1.default.debugCashItems && logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor_1.LogTextColor.BLUE);
@@ -170,6 +188,6 @@ function BarterChanger(container) {
             }
         });
     });
-    logger.info(`Algorithmic Trade Item Randomizer: Changed ${tradeItemsChanged} trade items and ${cashItemsChanged} cash items`);
+    logger.info(`AlgorithmicBarterRandomizer: Changed ${tradeItemsChanged} trade items and ${cashItemsChanged} cash items`);
 }
 exports.default = BarterChanger;

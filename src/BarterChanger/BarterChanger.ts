@@ -2,7 +2,7 @@ import { ILogger } from './../../types/models/spt/utils/ILogger.d';
 import { DatabaseServer } from "@spt-aki/servers/DatabaseServer";
 import { DependencyContainer } from "tsyringe";
 import config from "../../config/config.json"
-import { ammoParent, difficulties, excludableParents, excludedItemsList, moneyType } from "./BarterChangerUtils";
+import { ammoParent, difficulties, excludableCashParents, excludableParents, excludedItemsList, magParent, moneyType } from "./BarterChangerUtils";
 import { checkParentRecursive, seededRandom } from "../utils";
 import { IBarterScheme } from '@spt-aki/models/eft/common/tables/ITrader';
 import { RagfairServer } from "@spt-aki/servers/RagfairServer";
@@ -22,16 +22,7 @@ export default function BarterChanger(
     const logger = container.resolve<ILogger>("WinstonLogger")
     const traders = tables.traders
 
-    if (config.enableHardcore) {
-        if (config.hardcoreSettings.disableFlee) flee.minUserLevel = 99
-        if (config.hardcoreSettings.sellPriceNerf) {
-            Object.keys(traders).forEach((traderId) => {
-                traders[traderId].base?.loyaltyLevels.forEach((_, index) => {
-                    traders[traderId].base.loyaltyLevels[index].buy_price_coef *= 1.2
-                })
-            })
-        }
-    }
+    if (config.enableHardcore && config.hardcoreSettings.disableFlee) flee.minUserLevel = 99
 
     const tradersToInclude = new Set([
         "Prapor",
@@ -40,7 +31,8 @@ export default function BarterChanger(
         "Peacekeeper",
         "Mechanic",
         "Ragman",
-        "Jaeger"
+        "Jaeger",
+        ...config.customTradersToInclude
     ])
 
     const loot = tables.loot.staticLoot
@@ -67,7 +59,8 @@ export default function BarterChanger(
         handbookMapper[Id] = Price
     })
 
-    const getPrice = (id: string): number | undefined => {
+    const getPrice = (id: string, reverse = false): number | undefined => {
+        if (reverse && handbookMapper[id] && !isNaN(handbookMapper[id])) return handbookMapper[id]
         if (prices[id] && !isNaN(prices[id])) return prices[id]
         if (handbookMapper[id] && !isNaN(handbookMapper[id])) return handbookMapper[id]
     }
@@ -82,7 +75,7 @@ export default function BarterChanger(
             logger.error(`Unable to find 'cutLootList[maxKey]' `)
             return ""
         }
-        let minKey = Math.round(maxKey * (maxKey > 200 ? 0.9 : (isCash ? 0.8 : 0.4)))
+        let minKey = Math.round(maxKey * (isCash ? 0.7 : (maxKey > 200 ? 0.9 : 0.4)))
         const newKey = seededRandom(minKey, maxKey, randomSeed)
         const newId = cutLootList[newKey]
         // console.log(minKey, maxKey, totalCost, prices[newId], getName(newId))
@@ -123,6 +116,33 @@ export default function BarterChanger(
         const trader = traders[traderId]
         const name = trader.base.nickname
         if (!tradersToInclude.has(name)) return
+
+        if (config.enableHardcore) {
+            //reduceTraderLoyaltySpendRequirement
+            if (config.hardcoreSettings.reduceTraderLoyaltySpendRequirement) {
+                trader.base?.loyaltyLevels.forEach((_, index) => {
+                    if (trader.base?.loyaltyLevels[index].minSalesSum)
+                        trader.base.loyaltyLevels[index].minSalesSum *= 0.2
+                })
+            }
+
+            //IncreaseMinBuyCounts
+            if (config.hardcoreSettings.increaseMinBuyCounts) {
+                trader?.assort?.items.forEach((_, index) => {
+                    const restriction = trader?.assort?.items[index]?.upd?.BuyRestrictionMax
+                    if (restriction && restriction < 5) trader.assort.items[index].upd.BuyRestrictionMax = 5
+                })
+            }
+
+            //reduceTraderBuyPrice
+            if (config.hardcoreSettings.reduceTraderBuyPrice) {
+                trader.base?.loyaltyLevels.forEach((_, index) => {
+                    if (trader?.base?.loyaltyLevels?.[index])
+                        trader.base.loyaltyLevels[index].buy_price_coef *= 1.5
+                })
+            }
+        }
+
         const barters = trader.assort.barter_scheme
         const tradeItemMapper = {}
         trader.assort.items.forEach(item => {
@@ -137,11 +157,11 @@ export default function BarterChanger(
             let value = getPrice(itemId)
             switch (true) {
                 case moneyType.has(barter[0][0]._tpl): //MoneyValue
-                    if (!config.enableHardcore || checkParentRecursive(itemId, items, [ammoParent])) break;
+                    if (!config.enableHardcore || checkParentRecursive(itemId, items, excludableCashParents)) break;
 
                     if (isNaN(value)) value = barter[0][0].count
                     if (isNaN(value)) break;
-                    if (value < config.hardcoreSettings.cashItemCutoff) return;
+                    if (getPrice(itemId, true) < config.hardcoreSettings.cashItemCutoff) return;
                     config.debugCashItems && logger.logWithColor(`${getName(itemId)}`, LogTextColor.YELLOW)
                     config.debugCashItems && logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor.BLUE)
                     const newCashBarter = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, true)

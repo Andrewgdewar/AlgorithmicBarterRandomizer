@@ -1,5 +1,6 @@
 {
     "enable": true,
+    "seed": 1990,
     "difficulty": "medium",
     "EXAMPLE_DIFFICULTY_Values_FOR_ABOVE": [
         "easy",
@@ -9,11 +10,13 @@
     ],
     "enableHardcore": true,
     "hardcoreSettings": {
-        "cashItemCutoff": 15000,
+        "cashItemCutoff": 10000,
         "disableFlee": true,
-        "sellPriceNerf": true
+        "reduceTraderLoyaltySpendRequirement": true,
+        "increaseMinBuyCounts": true,
+        "reduceTraderBuyPrice": true
     },
-    "seed": 1990,
+    "customTradersToInclude": [],
     "debugCashItems": false,
     "debug": false
 }
