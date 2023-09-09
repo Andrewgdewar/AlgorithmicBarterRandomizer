@@ -21,6 +21,8 @@ export const excludableParents = [
    */
 ]
 
+export const knownInternalTraders = new Set(["Fence", "Unknown", "caretaker"])
+
 export const magParent = "5448bc234bdc2d3c308b4569"
 export const ammoParent = "5485a8684bdc2da71d8b4567"
 

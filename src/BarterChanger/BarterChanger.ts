@@ -2,7 +2,7 @@ import { ILogger } from './../../types/models/spt/utils/ILogger.d';
 import { DatabaseServer } from "@spt-aki/servers/DatabaseServer";
 import { DependencyContainer } from "tsyringe";
 import config from "../../config/config.json"
-import { ammoParent, difficulties, excludableCashParents, excludableParents, excludedItemsList, magParent, moneyType } from "./BarterChangerUtils";
+import { ammoParent, difficulties, excludableCashParents, excludableParents, excludedItemsList, knownInternalTraders, magParent, moneyType } from "./BarterChangerUtils";
 import { checkParentRecursive, seededRandom } from "../utils";
 import { IBarterScheme } from '@spt-aki/models/eft/common/tables/ITrader';
 import { RagfairServer } from "@spt-aki/servers/RagfairServer";
@@ -115,8 +115,10 @@ export default function BarterChanger(
     Object.keys(traders).forEach((traderId) => {
         const trader = traders[traderId]
         const name = trader.base.nickname
-        if (!tradersToInclude.has(name)) return
-
+        if (!tradersToInclude.has(name)) {
+            (config.printUnkownTraders && !knownInternalTraders.has(name)) && logger.logWithColor(`AlgorithmicBarterRandomizer: Unknown trader detected: ${name}`, LogTextColor.MAGENTA)
+            return;
+        }
         if (config.enableHardcore) {
             //reduceTraderLoyaltySpendRequirement
             if (config.hardcoreSettings.reduceTraderLoyaltySpendRequirement) {

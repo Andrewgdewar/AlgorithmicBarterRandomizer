@@ -8,7 +8,7 @@
         "hard",
         "masochist"
     ],
-    "enableHardcore": true,
+    "enableHardcore": false,
     "hardcoreSettings": {
         "cashItemCutoff": 10000,
         "disableFlee": true,
@@ -16,7 +16,11 @@
         "increaseMinBuyCounts": true,
         "reduceTraderBuyPrice": true
     },
-    "customTradersToInclude": [],
+    "printUnkownTraders": false,
+    "customTradersToInclude": [
+        "SteveTheExampleGuyThatHasSalewas",
+        "BobJustExampleBob"
+    ],
     "debugCashItems": false,
     "debug": false
 }

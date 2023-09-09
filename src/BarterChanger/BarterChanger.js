@@ -24,7 +24,7 @@ function BarterChanger(container) {
         "Skier",
         "Peacekeeper",
         "Mechanic",
-        "Ragman",
+        // "Ragman",
         "Jaeger",
         ...config_json_1.default.customTradersToInclude
     ]);
@@ -102,8 +102,10 @@ function BarterChanger(container) {
     Object.keys(traders).forEach((traderId) => {
         const trader = traders[traderId];
         const name = trader.base.nickname;
-        if (!tradersToInclude.has(name))
+        if (!tradersToInclude.has(name)) {
+            (config_json_1.default.printUnkownTraders && !BarterChangerUtils_1.knownInternalTraders.has(name)) && logger.logWithColor(`AlgorithmicBarterRandomizer: Unknown trader detected: ${name}`, LogTextColor_1.LogTextColor.MAGENTA);
             return;
+        }
         if (config_json_1.default.enableHardcore) {
             //reduceTraderLoyaltySpendRequirement
             if (config_json_1.default.hardcoreSettings.reduceTraderLoyaltySpendRequirement) {

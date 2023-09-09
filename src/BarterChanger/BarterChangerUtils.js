@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.excludedItemsList = exports.difficulties = exports.moneyType = exports.excludableCashParents = exports.ammoParent = exports.magParent = exports.excludableParents = exports.throwWeaponParent = exports.stackableItemParent = exports.specItemParent = exports.medsParent = exports.mapParent = exports.knifeParent = exports.keyParent = exports.infoParent = exports.compoundItemParent = void 0;
+exports.excludedItemsList = exports.difficulties = exports.moneyType = exports.excludableCashParents = exports.ammoParent = exports.magParent = exports.knownInternalTraders = exports.excludableParents = exports.throwWeaponParent = exports.stackableItemParent = exports.specItemParent = exports.medsParent = exports.mapParent = exports.knifeParent = exports.keyParent = exports.infoParent = exports.compoundItemParent = void 0;
 exports.compoundItemParent = "566162e44bdc2d3f298b4573";
 exports.infoParent = "5448ecbe4bdc2d60728b4568";
 exports.keyParent = "543be5e94bdc2df1348b4568";
@@ -23,6 +23,7 @@ exports.excludableParents = [
    throwWeaponParent
    */
 ];
+exports.knownInternalTraders = new Set(["Fence", "Unknown", "caretaker"]);
 exports.magParent = "5448bc234bdc2d3c308b4569";
 exports.ammoParent = "5485a8684bdc2da71d8b4567";
 exports.excludableCashParents = [exports.magParent, exports.ammoParent, exports.specItemParent];
