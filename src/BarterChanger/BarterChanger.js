@@ -24,7 +24,7 @@ function BarterChanger(container) {
         "Skier",
         "Peacekeeper",
         "Mechanic",
-        // "Ragman",
+        "Ragman",
         "Jaeger",
         ...config_json_1.default.customTradersToInclude
     ]);
@@ -45,13 +45,22 @@ function BarterChanger(container) {
     handbook.Items.forEach(({ Id, Price }) => {
         handbookMapper[Id] = Price;
     });
-    const getPrice = (id, reverse = false) => {
-        if (reverse && handbookMapper[id] && !isNaN(handbookMapper[id]))
-            return handbookMapper[id];
-        if (prices[id] && !isNaN(prices[id]))
-            return prices[id];
-        if (handbookMapper[id] && !isNaN(handbookMapper[id]))
-            return handbookMapper[id];
+    const getPrice = (id, reverse = true) => {
+        const notOnFleaMultiplier = items[id]._props.CanSellOnRagfair ? 1 : (2 / BarterChangerUtils_1.difficulties[config_json_1.default.difficulty]);
+        const handbookVal = handbookMapper[id];
+        const fleaVal = prices[id];
+        switch (true) {
+            // case handbookVal && fleaVal && !isNaN(fleaVal) && !isNaN(handbookVal):
+            //     return (handbookVal + fleaVal) / 2
+            case reverse && !!handbookVal && !isNaN(handbookVal):
+                return handbookVal * notOnFleaMultiplier;
+            case !!fleaVal && !isNaN(fleaVal):
+                return fleaVal * notOnFleaMultiplier;
+            case !!handbookVal && !isNaN(handbookVal):
+                return handbookVal * notOnFleaMultiplier;
+            default:
+                break;
+        }
     };
     const cutLootList = [...filterLootList].sort((a, b) => getPrice(a) - getPrice(b));
     const getAlt = (randomSeed, totalCost, isCash = false) => {
@@ -64,7 +73,7 @@ function BarterChanger(container) {
             logger.error(`Unable to find 'cutLootList[maxKey]' `);
             return "";
         }
-        let minKey = Math.round(maxKey * (isCash ? 0.7 : (maxKey > 200 ? 0.9 : 0.4)));
+        let minKey = Math.round(maxKey * (isCash ? 0.8 : (maxKey > 200 ? 0.8 : 0.5)));
         const newKey = (0, utils_1.seededRandom)(minKey, maxKey, randomSeed);
         const newId = cutLootList[newKey];
         // console.log(minKey, maxKey, totalCost, prices[newId], getName(newId))
@@ -75,12 +84,12 @@ function BarterChanger(container) {
         return newId;
     };
     const getNewBarterList = (randomSeed, ongoingCost = 0, newBarterList = [], originalTotalCost, isCash = false) => {
-        const { ongoing, multiplier } = BarterChangerUtils_1.difficulties[config_json_1.default.difficulty];
+        const difficultyModifier = isCash ? BarterChangerUtils_1.difficulties[config_json_1.default.difficulty] + 0.2 : BarterChangerUtils_1.difficulties[config_json_1.default.difficulty];
         const totalRemaining = originalTotalCost - ongoingCost;
         const newId = getAlt(randomSeed, totalRemaining, isCash);
         if (!newId)
             return undefined;
-        const multipliedValue = multiplier * getPrice(newId);
+        const multipliedValue = difficultyModifier * getPrice(newId);
         let itemCount = Math.round(totalRemaining / multipliedValue) || 1;
         if (itemCount > 15)
             itemCount = 15;
@@ -90,10 +99,10 @@ function BarterChanger(container) {
         const cost = multipliedValue * itemCount;
         //getName(newId) + cost
         if (config_json_1.default.debug || (isCash && config_json_1.default.debugCashItems))
-            logger.logWithColor(`${itemCount} x ${getName(newId)} ${itemCount * getPrice(newId)}`, LogTextColor_1.LogTextColor.GREEN);
+            logger.logWithColor(`${itemCount} x ${getName(newId)} ${itemCount * getPrice(newId)}`, LogTextColor_1.LogTextColor.CYAN);
         newBarterList.push({ _tpl: newId, count: itemCount });
         ongoingCost = Math.round(ongoingCost + cost);
-        if ((ongoingCost * ongoing) > originalTotalCost)
+        if ((ongoingCost * difficultyModifier) > originalTotalCost)
             return newBarterList;
         return getNewBarterList(randomSeed + ongoingCost, ongoingCost, newBarterList, originalTotalCost, isCash);
     };
@@ -141,7 +150,7 @@ function BarterChanger(container) {
             if (!barter?.[0]?.[0]?._tpl)
                 return;
             const offer = ragFairServer.getOffer(barterId);
-            let value = getPrice(itemId);
+            let value = getPrice(itemId) * 1.2;
             switch (true) {
                 case BarterChangerUtils_1.moneyType.has(barter[0][0]._tpl): //MoneyValue
                     if (!config_json_1.default.enableHardcore || (0, utils_1.checkParentRecursive)(itemId, items, BarterChangerUtils_1.excludableCashParents))
@@ -155,6 +164,11 @@ function BarterChanger(container) {
                     config_json_1.default.debugCashItems && logger.logWithColor(`${getName(itemId)}`, LogTextColor_1.LogTextColor.YELLOW);
                     config_json_1.default.debugCashItems && logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor_1.LogTextColor.BLUE);
                     const newCashBarter = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, true);
+                    let newCashCost = 0;
+                    config_json_1.default.debugCashItems && newCashBarter.forEach(({ count, _tpl }) => {
+                        newCashCost += (count * getPrice(_tpl));
+                    });
+                    config_json_1.default.debugCashItems && logger.logWithColor(`${newCashCost > value ? "MORE THAN" : "LESS THAN"} actual value ${newCashCost > value ? newCashCost - value : value - newCashCost}`, newCashCost > value ? LogTextColor_1.LogTextColor.RED : LogTextColor_1.LogTextColor.GREEN);
                     config_json_1.default.debugCashItems && console.log("\n");
                     if (!newCashBarter || !newCashBarter.length)
                         break;
@@ -163,15 +177,14 @@ function BarterChanger(container) {
                     barter[0] = newCashBarter;
                     break;
                 default:
-                    config_json_1.default.debug && logger.logWithColor(`${getName(itemId)}`, LogTextColor_1.LogTextColor.YELLOW);
+                    config_json_1.default.debug && logger.logWithColor(`${getName(itemId)} - ${value}`, LogTextColor_1.LogTextColor.YELLOW);
                     let totalCost = 0;
                     barter[0].forEach(({ count, _tpl }) => {
                         if (BarterChangerUtils_1.excludedItemsList.has(_tpl))
                             return;
-                        config_json_1.default.debug && logger.logWithColor(`${count} x ${getName(_tpl)}`, LogTextColor_1.LogTextColor.BLUE);
+                        config_json_1.default.debug && logger.logWithColor(`${count} x ${getName(_tpl)} ${getPrice(barter[0][0]._tpl)}`, LogTextColor_1.LogTextColor.MAGENTA);
                         totalCost += (count * getPrice(_tpl));
                     });
-                    config_json_1.default.debug && logger.info(`========================= original cost ${totalCost} Actual cost > ${value}`);
                     if (isNaN(value)) {
                         config_json_1.default.debug && logger.info(`No price info attempting override`);
                         if (!isNaN(totalCost))
@@ -180,9 +193,16 @@ function BarterChanger(container) {
                             return config_json_1.default.debug && logger.info(`Unable to Override!!!! Skipping`);
                     }
                     const newBarters = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value);
-                    config_json_1.default.debug && console.log("\n");
                     if (!newBarters || !newBarters.length)
                         break;
+                    let newCost = 0;
+                    config_json_1.default.debug && newBarters.forEach(({ count, _tpl }) => {
+                        newCost += (count * getPrice(_tpl));
+                    });
+                    config_json_1.default.debug && logger.info(`original cost: ${totalCost} > new cost: ${newCost} > itemCost: ${value}`);
+                    config_json_1.default.debug && logger.logWithColor(`${newCost > totalCost ? "INCREASED" : "DECREASED"} from original ${newCost > totalCost ? newCost - totalCost : totalCost - newCost}`, newCost > totalCost ? LogTextColor_1.LogTextColor.RED : LogTextColor_1.LogTextColor.GREEN);
+                    config_json_1.default.debug && logger.logWithColor(`${newCost > value ? "MORE THAN" : "LESS THAN"} actual value ${newCost > value ? newCost - value : value - newCost}`, newCost > value ? LogTextColor_1.LogTextColor.RED : LogTextColor_1.LogTextColor.GREEN);
+                    config_json_1.default.debug && console.log("\n");
                     tradeItemsChanged++;
                     offer.requirements = newBarters.map((barterInfo) => ({ ...barterInfo, onlyFunctional: false }));
                     barter[0] = newBarters;

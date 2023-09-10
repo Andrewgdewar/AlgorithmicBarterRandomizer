@@ -33,9 +33,9 @@ exports.moneyType = new Set([
     "5449016a4bdc2d6f028b456f"
 ]);
 exports.difficulties = {
-    "easy": { ongoing: 1.5, multiplier: 1.5 },
-    "medium": { ongoing: 1.3, multiplier: 1.1 },
-    "hard": { ongoing: 1.2, multiplier: 1 },
-    "masochist": { ongoing: 0.7, multiplier: 0.8 }
+    "easy": 1.5,
+    "medium": 1.1,
+    "hard": 0.9,
+    "masochist": 0.6,
 };
 exports.excludedItemsList = new Set(["59f32bb586f774757e1e8442", "59f32c3b86f77472a31742f0"]);

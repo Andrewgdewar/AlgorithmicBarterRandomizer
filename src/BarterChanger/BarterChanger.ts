@@ -59,10 +59,23 @@ export default function BarterChanger(
         handbookMapper[Id] = Price
     })
 
-    const getPrice = (id: string, reverse = false): number | undefined => {
-        if (reverse && handbookMapper[id] && !isNaN(handbookMapper[id])) return handbookMapper[id]
-        if (prices[id] && !isNaN(prices[id])) return prices[id]
-        if (handbookMapper[id] && !isNaN(handbookMapper[id])) return handbookMapper[id]
+    const getPrice = (id: string, reverse = true): number | undefined => {
+        const notOnFleaMultiplier = items[id]._props.CanSellOnRagfair ? 1 : (2 / difficulties[config.difficulty])
+        const handbookVal = handbookMapper[id]
+        const fleaVal = prices[id]
+
+        switch (true) {
+            // case handbookVal && fleaVal && !isNaN(fleaVal) && !isNaN(handbookVal):
+            //     return (handbookVal + fleaVal) / 2
+            case reverse && !!handbookVal && !isNaN(handbookVal):
+                return handbookVal * notOnFleaMultiplier
+            case !!fleaVal && !isNaN(fleaVal):
+                return fleaVal * notOnFleaMultiplier
+            case !!handbookVal && !isNaN(handbookVal):
+                return handbookVal * notOnFleaMultiplier
+            default:
+                break;
+        }
     }
 
     const cutLootList = [...filterLootList].sort((a, b) => getPrice(a) - getPrice(b))
@@ -75,7 +88,7 @@ export default function BarterChanger(
             logger.error(`Unable to find 'cutLootList[maxKey]' `)
             return ""
         }
-        let minKey = Math.round(maxKey * (isCash ? 0.7 : (maxKey > 200 ? 0.9 : 0.4)))
+        let minKey = Math.round(maxKey * (isCash ? 0.8 : (maxKey > 200 ? 0.8 : 0.5)))
         const newKey = seededRandom(minKey, maxKey, randomSeed)
         const newId = cutLootList[newKey]
         // console.log(minKey, maxKey, totalCost, prices[newId], getName(newId))
@@ -87,11 +100,11 @@ export default function BarterChanger(
     }
 
     const getNewBarterList = (randomSeed: string, ongoingCost: number = 0, newBarterList: IBarterScheme[] = [], originalTotalCost: number, isCash: boolean = false) => {
-        const { ongoing, multiplier } = difficulties[config.difficulty]
+        const difficultyModifier = isCash ? difficulties[config.difficulty] + 0.2 : difficulties[config.difficulty]
         const totalRemaining = originalTotalCost - ongoingCost
         const newId = getAlt(randomSeed, totalRemaining, isCash)
         if (!newId) return undefined
-        const multipliedValue = multiplier * getPrice(newId)
+        const multipliedValue = difficultyModifier * getPrice(newId)
         let itemCount = Math.round(totalRemaining / multipliedValue) || 1
         if (itemCount > 15) itemCount = 15
         if (!newBarterList.length && itemCount > 5 && itemCount < 15) {
@@ -99,12 +112,12 @@ export default function BarterChanger(
         }
         const cost = multipliedValue * itemCount
         //getName(newId) + cost
-        if (config.debug || (isCash && config.debugCashItems)) logger.logWithColor(`${itemCount} x ${getName(newId)} ${itemCount * getPrice(newId)}`, LogTextColor.GREEN)
+        if (config.debug || (isCash && config.debugCashItems)) logger.logWithColor(`${itemCount} x ${getName(newId)} ${itemCount * getPrice(newId)}`, LogTextColor.CYAN)
         newBarterList.push({ _tpl: newId, count: itemCount })
 
         ongoingCost = Math.round(ongoingCost + cost)
 
-        if ((ongoingCost * ongoing) > originalTotalCost) return newBarterList
+        if ((ongoingCost * difficultyModifier) > originalTotalCost) return newBarterList
 
         return getNewBarterList(randomSeed + ongoingCost, ongoingCost, newBarterList, originalTotalCost, isCash)
     }
@@ -156,7 +169,7 @@ export default function BarterChanger(
             const barter = barters[barterId]
             if (!barter?.[0]?.[0]?._tpl) return
             const offer = ragFairServer.getOffer(barterId)
-            let value = getPrice(itemId)
+            let value = getPrice(itemId) * 1.2
             switch (true) {
                 case moneyType.has(barter[0][0]._tpl): //MoneyValue
                     if (!config.enableHardcore || checkParentRecursive(itemId, items, excludableCashParents)) break;
@@ -167,6 +180,14 @@ export default function BarterChanger(
                     config.debugCashItems && logger.logWithColor(`${getName(itemId)}`, LogTextColor.YELLOW)
                     config.debugCashItems && logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor.BLUE)
                     const newCashBarter = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, true)
+                    let newCashCost = 0
+                    config.debugCashItems && newCashBarter.forEach(({ count, _tpl }) => {
+                        newCashCost += (count * getPrice(_tpl))
+                    })
+                    config.debugCashItems && logger.logWithColor(
+                        `${newCashCost > value ? "MORE THAN" : "LESS THAN"} actual value ${newCashCost > value ? newCashCost - value : value - newCashCost}`,
+                        newCashCost > value ? LogTextColor.RED : LogTextColor.GREEN
+                    )
                     config.debugCashItems && console.log("\n")
 
                     if (!newCashBarter || !newCashBarter.length) break;
@@ -176,16 +197,14 @@ export default function BarterChanger(
                     barter[0] = newCashBarter
                     break;
                 default:
-                    config.debug && logger.logWithColor(`${getName(itemId)}`, LogTextColor.YELLOW)
+                    config.debug && logger.logWithColor(`${getName(itemId)} - ${value}`, LogTextColor.YELLOW)
                     let totalCost = 0
 
                     barter[0].forEach(({ count, _tpl }) => {
                         if (excludedItemsList.has(_tpl)) return
-                        config.debug && logger.logWithColor(`${count} x ${getName(_tpl)}`, LogTextColor.BLUE)
+                        config.debug && logger.logWithColor(`${count} x ${getName(_tpl)} ${getPrice(barter[0][0]._tpl)}`, LogTextColor.MAGENTA)
                         totalCost += (count * getPrice(_tpl))
                     })
-
-                    config.debug && logger.info(`========================= original cost ${totalCost} Actual cost > ${value}`)
 
                     if (isNaN(value)) {
                         config.debug && logger.info(`No price info attempting override`)
@@ -195,9 +214,23 @@ export default function BarterChanger(
 
                     const newBarters = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value)
 
+                    if (!newBarters || !newBarters.length) break;
+
+                    let newCost = 0
+                    config.debug && newBarters.forEach(({ count, _tpl }) => {
+                        newCost += (count * getPrice(_tpl))
+                    })
+                    config.debug && logger.info(`original cost: ${totalCost} > new cost: ${newCost} > itemCost: ${value}`)
+                    config.debug && logger.logWithColor(
+                        `${newCost > totalCost ? "INCREASED" : "DECREASED"} from original ${newCost > totalCost ? newCost - totalCost : totalCost - newCost}`,
+                        newCost > totalCost ? LogTextColor.RED : LogTextColor.GREEN
+                    )
+                    config.debug && logger.logWithColor(
+                        `${newCost > value ? "MORE THAN" : "LESS THAN"} actual value ${newCost > value ? newCost - value : value - newCost}`,
+                        newCost > value ? LogTextColor.RED : LogTextColor.GREEN
+                    )
                     config.debug && console.log("\n")
 
-                    if (!newBarters || !newBarters.length) break;
                     tradeItemsChanged++
                     offer.requirements = newBarters.map((barterInfo: { _tpl: string, count: number }) => ({ ...barterInfo, onlyFunctional: false }))
                     barter[0] = newBarters

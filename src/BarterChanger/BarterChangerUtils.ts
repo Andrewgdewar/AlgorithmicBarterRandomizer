@@ -35,10 +35,10 @@ export const moneyType = new Set([
 ])
 
 export const difficulties = {
-    "easy": { ongoing: 1.5, multiplier: 1.5 },
-    "medium": { ongoing: 1.3, multiplier: 1.1 },
-    "hard": { ongoing: 1.2, multiplier: 1 },
-    "masochist": { ongoing: 0.7, multiplier: 0.8 }
+    "easy": 1.5,
+    "medium": 1.1,
+    "hard": 0.9,
+    "masochist": 0.6,
 }
 
 
