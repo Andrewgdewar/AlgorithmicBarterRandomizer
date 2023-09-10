@@ -29,7 +29,8 @@ export const saveToFile = (data, filePath) => {
 
 export const seededRandom = (min: number, max: number, target?: string) => {
     const targetSeed = stringToNum(target)
-    let seed = config.seed + targetSeed
+    const finalSeed = config.seed || (Math.random() * 1000)
+    let seed = finalSeed + targetSeed
     seed = (seed * 9301 + 49297) % 233280;
     var rnd = seed / 233280;
 

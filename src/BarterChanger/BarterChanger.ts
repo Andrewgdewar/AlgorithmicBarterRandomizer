@@ -60,7 +60,11 @@ export default function BarterChanger(
     })
 
     const getPrice = (id: string, reverse = true): number | undefined => {
-        const notOnFleaMultiplier = items[id]._props.CanSellOnRagfair ? 1 : (2 / difficulties[config.difficulty])
+        let multiplier = 1
+        if (!items[id]._props.CanSellOnRagfair) multiplier *= (2 / difficulties[config.difficulty])
+        if (checkParentRecursive(id, items, ["5422acb9af1c889c16000029", "543be5cb4bdc2deb348b4568"])) {
+            reverse = false
+        }
         const handbookVal = handbookMapper[id]
         const fleaVal = prices[id]
 
@@ -68,11 +72,13 @@ export default function BarterChanger(
             // case handbookVal && fleaVal && !isNaN(fleaVal) && !isNaN(handbookVal):
             //     return (handbookVal + fleaVal) / 2
             case reverse && !!handbookVal && !isNaN(handbookVal):
-                return handbookVal * notOnFleaMultiplier
+                return handbookVal * multiplier
+            case !!fleaVal && !isNaN(fleaVal)!! && handbookVal && !isNaN(handbookVal):
+                return (handbookVal + fleaVal / 2) * multiplier
             case !!fleaVal && !isNaN(fleaVal):
-                return fleaVal * notOnFleaMultiplier
+                return fleaVal * multiplier
             case !!handbookVal && !isNaN(handbookVal):
-                return handbookVal * notOnFleaMultiplier
+                return handbookVal * multiplier
             default:
                 break;
         }

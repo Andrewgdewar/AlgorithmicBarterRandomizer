@@ -35,7 +35,8 @@ const saveToFile = (data, filePath) => {
 exports.saveToFile = saveToFile;
 const seededRandom = (min, max, target) => {
     const targetSeed = (0, exports.stringToNum)(target);
-    let seed = config_json_1.default.seed + targetSeed;
+    const finalSeed = config_json_1.default.seed || (Math.random() * 1000);
+    let seed = finalSeed + targetSeed;
     seed = (seed * 9301 + 49297) % 233280;
     var rnd = seed / 233280;
     return Math.round(min + rnd * (max - min));
