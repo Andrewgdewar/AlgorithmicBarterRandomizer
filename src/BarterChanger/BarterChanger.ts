@@ -1,3 +1,4 @@
+import { IRagfairOffer } from './../../types/models/eft/ragfair/IRagfairOffer.d';
 import { ILogger } from './../../types/models/spt/utils/ILogger.d';
 import { DatabaseServer } from "@spt-aki/servers/DatabaseServer";
 import { DependencyContainer } from "tsyringe";
@@ -59,18 +60,23 @@ export default function BarterChanger(
         handbookMapper[Id] = Price
     })
 
+
+    const tradeItemMapper = {}
+
+    Object.keys(traders).forEach((traderId) => {
+        const trader = traders[traderId]
+        trader?.assort?.items.forEach(item => {
+            tradeItemMapper[item._id] = item._tpl
+        })
+    })
+
     const getPrice = (id: string, reverse = false): number | undefined => {
         let multiplier = 1
         if (!items[id]._props.CanSellOnRagfair) multiplier *= 2
-        // if (checkParentRecursive(id, items, ["5422acb9af1c889c16000029", "543be5cb4bdc2deb348b4568"])) {
-        //     reverse = false
-        // }
         const handbookVal = handbookMapper[id]
         const fleaVal = prices[id]
 
         switch (true) {
-            // case handbookVal && fleaVal && !isNaN(fleaVal) && !isNaN(handbookVal):
-            //     return (handbookVal + fleaVal) / 2
             case reverse && !!fleaVal && !isNaN(fleaVal)!! && handbookVal && !isNaN(handbookVal):
                 return (handbookVal + fleaVal / 2) * multiplier
             case !!fleaVal && !isNaN(fleaVal):
@@ -89,7 +95,7 @@ export default function BarterChanger(
         let maxKey = filteredLootList.findIndex((id) => getPrice(id) > totalCost)
         if (maxKey < 0) maxKey = filteredLootList.length - 1
         if (maxKey < 10) maxKey = 10
-        let minKey = maxKey === (filteredLootList.length - 1) ? maxKey - 30 : maxKey - 10
+        let minKey = maxKey === (filteredLootList.length - 1) ? maxKey - 50 : maxKey - 20
         if (minKey < 0) minKey = 0
 
         const newKey = seededRandom(minKey, maxKey, randomSeed)
@@ -161,17 +167,13 @@ export default function BarterChanger(
         }
 
         const barters = trader.assort.barter_scheme
-        const tradeItemMapper = {}
-        trader.assort.items.forEach(item => {
-            tradeItemMapper[item._id] = item._tpl
-        })
 
         Object.keys(barters).forEach(barterId => {
             const itemId = tradeItemMapper[barterId]
             const barter = barters[barterId]
             if (!barter?.[0]?.[0]?._tpl) return
             const offer = ragFairServer.getOffer(barterId)
-            let value = Math.max(offer.itemsCost, offer.summaryCost)
+            let value = Math.max(offer.itemsCost, offer.summaryCost, getPrice(itemId))
             const originalValue = value
             switch (true) {
                 case moneyType.has(barter[0][0]._tpl): //MoneyValue

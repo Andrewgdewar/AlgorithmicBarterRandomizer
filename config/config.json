@@ -25,5 +25,5 @@
     "MeleeBarterItems": true,
     "GrenadeBarterItems": true,
     "debugCashItems": false,
-    "debug": true
+    "debug": false
 }

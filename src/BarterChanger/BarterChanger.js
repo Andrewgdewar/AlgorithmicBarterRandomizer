@@ -45,18 +45,20 @@ function BarterChanger(container) {
     handbook.Items.forEach(({ Id, Price }) => {
         handbookMapper[Id] = Price;
     });
+    const tradeItemMapper = {};
+    Object.keys(traders).forEach((traderId) => {
+        const trader = traders[traderId];
+        trader?.assort?.items.forEach(item => {
+            tradeItemMapper[item._id] = item._tpl;
+        });
+    });
     const getPrice = (id, reverse = false) => {
         let multiplier = 1;
         if (!items[id]._props.CanSellOnRagfair)
             multiplier *= 2;
-        // if (checkParentRecursive(id, items, ["5422acb9af1c889c16000029", "543be5cb4bdc2deb348b4568"])) {
-        //     reverse = false
-        // }
         const handbookVal = handbookMapper[id];
         const fleaVal = prices[id];
         switch (true) {
-            // case handbookVal && fleaVal && !isNaN(fleaVal) && !isNaN(handbookVal):
-            //     return (handbookVal + fleaVal) / 2
             case reverse && !!fleaVal && !isNaN(fleaVal) && handbookVal && !isNaN(handbookVal):
                 return (handbookVal + fleaVal / 2) * multiplier;
             case !!fleaVal && !isNaN(fleaVal):
@@ -75,7 +77,7 @@ function BarterChanger(container) {
             maxKey = filteredLootList.length - 1;
         if (maxKey < 10)
             maxKey = 10;
-        let minKey = maxKey === (filteredLootList.length - 1) ? maxKey - 30 : maxKey - 10;
+        let minKey = maxKey === (filteredLootList.length - 1) ? maxKey - 50 : maxKey - 20;
         if (minKey < 0)
             minKey = 0;
         const newKey = (0, utils_1.seededRandom)(minKey, maxKey, randomSeed);
@@ -96,9 +98,6 @@ function BarterChanger(container) {
         let itemCount = Math.round((totalRemaining / value)) || 1;
         if (itemCount > 15)
             itemCount = 15;
-        // if (!newBarterList.length && itemCount > 5 && itemCount < 15) {
-        //     itemCount = 5
-        // }
         const cost = value * itemCount;
         if (config_json_1.default.debug || (isCash && config_json_1.default.debugCashItems))
             logger.logWithColor(`${itemCount} x ${getName(newId)} ${itemCount * getPrice(newId)}`, LogTextColor_1.LogTextColor.CYAN);
@@ -144,17 +143,13 @@ function BarterChanger(container) {
             }
         }
         const barters = trader.assort.barter_scheme;
-        const tradeItemMapper = {};
-        trader.assort.items.forEach(item => {
-            tradeItemMapper[item._id] = item._tpl;
-        });
         Object.keys(barters).forEach(barterId => {
             const itemId = tradeItemMapper[barterId];
             const barter = barters[barterId];
             if (!barter?.[0]?.[0]?._tpl)
                 return;
             const offer = ragFairServer.getOffer(barterId);
-            let value = Math.max(offer.itemsCost, offer.summaryCost);
+            let value = Math.max(offer.itemsCost, offer.summaryCost, getPrice(itemId));
             const originalValue = value;
             switch (true) {
                 case BarterChangerUtils_1.moneyType.has(barter[0][0]._tpl): //MoneyValue
@@ -186,15 +181,9 @@ function BarterChanger(container) {
                     config_json_1.default.debug && logger.logWithColor(`${getName(itemId)} - ${value}`, LogTextColor_1.LogTextColor.YELLOW);
                     let totalCost = 0;
                     barter[0].forEach(({ count, _tpl }) => {
-                        // if (excludedItemsList.has(_tpl)) return
                         config_json_1.default.debug && logger.logWithColor(`${count} x ${getName(_tpl)} ${getPrice(barter[0][0]._tpl)}`, LogTextColor_1.LogTextColor.MAGENTA);
                         totalCost += (count * getPrice(_tpl));
                     });
-                    // if (isNaN(value)) {
-                    //     config.debug && logger.info(`No price info attempting override`)
-                    //     if (!isNaN(totalCost)) value = totalCost
-                    //     else return config.debug && logger.info(`Unable to Override!!!! Skipping`)
-                    // }
                     const newBarters = getNewBarterList((barterId + itemId).replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, false, new Set([itemId]));
                     if (!newBarters || !newBarters.length)
                         break;
