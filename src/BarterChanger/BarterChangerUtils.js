@@ -16,12 +16,10 @@ exports.excludableParents = [
     exports.keyParent,
     exports.mapParent,
     exports.specItemParent,
-    exports.stackableItemParent
-    /*
-   ,medsParent,
-    knifeParent,
-   throwWeaponParent
-   */
+    exports.stackableItemParent,
+    // medsParent,
+    // knifeParent,
+    // throwWeaponParent
 ];
 exports.knownInternalTraders = new Set(["Fence", "Unknown", "caretaker"]);
 exports.magParent = "5448bc234bdc2d3c308b4569";
@@ -33,9 +31,9 @@ exports.moneyType = new Set([
     "5449016a4bdc2d6f028b456f"
 ]);
 exports.difficulties = {
-    "easy": 1.5,
-    "medium": 1.1,
-    "hard": 0.9,
-    "masochist": 0.6,
+    "easy": { barter: 0.5, cash: 0.2 },
+    "medium": { barter: 0.9, cash: 0.6 },
+    "hard": { barter: 1.2, cash: 0.9 },
+    "masochist": { barter: 1.5, cash: 1.2 },
 };
-exports.excludedItemsList = new Set(["59f32bb586f774757e1e8442", "59f32c3b86f77472a31742f0"]);
+exports.excludedItemsList = new Set(["59f32bb586f774757e1e8442", "59f32c3b86f77472a31742f0", "62a08f4c4f842e1bd12d9d62"]);

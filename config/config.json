@@ -1,6 +1,6 @@
 {
     "enable": true,
-    "seed": 1990,
+    "seed": 0,
     "difficulty": "medium",
     "EXAMPLE_DIFFICULTY_Values_FOR_ABOVE": [
         "easy",
@@ -8,9 +8,9 @@
         "hard",
         "masochist"
     ],
-    "enableHardcore": false,
+    "enableHardcore": true,
     "hardcoreSettings": {
-        "cashItemCutoff": 10000,
+        "cashItemCutoff": 5000,
         "disableFlee": true,
         "reduceTraderLoyaltySpendRequirement": true,
         "increaseMinBuyCounts": true,
@@ -21,6 +21,6 @@
         "SteveTheExampleGuyThatHasSalewas",
         "BobJustExampleBob"
     ],
-    "debugCashItems": false,
+    "debugCashItems": true,
     "debug": false
 }
