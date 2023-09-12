@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.excludedItemsList = exports.difficulties = exports.moneyType = exports.excludableCashParents = exports.ammoParent = exports.magParent = exports.knownInternalTraders = exports.excludableParents = exports.throwWeaponParent = exports.stackableItemParent = exports.specItemParent = exports.medsParent = exports.mapParent = exports.knifeParent = exports.keyParent = exports.infoParent = exports.compoundItemParent = void 0;
+const config_json_1 = __importDefault(require("../../config/config.json"));
 exports.compoundItemParent = "566162e44bdc2d3f298b4573";
 exports.infoParent = "5448ecbe4bdc2d60728b4568";
 exports.keyParent = "543be5e94bdc2df1348b4568";
@@ -21,6 +25,12 @@ exports.excludableParents = [
     // knifeParent,
     // throwWeaponParent
 ];
+if (!config_json_1.default.MedBarterItems)
+    exports.excludableParents.push(exports.medsParent);
+if (!config_json_1.default.MeleeBarterItems)
+    exports.excludableParents.push(exports.knifeParent);
+if (!config_json_1.default.GrenadeBarterItems)
+    exports.excludableParents.push(exports.throwWeaponParent);
 exports.knownInternalTraders = new Set(["Fence", "Unknown", "caretaker"]);
 exports.magParent = "5448bc234bdc2d3c308b4569";
 exports.ammoParent = "5485a8684bdc2da71d8b4567";
@@ -36,4 +46,9 @@ exports.difficulties = {
     "hard": { barter: 1.2, cash: 0.9 },
     "masochist": { barter: 1.5, cash: 1.2 },
 };
-exports.excludedItemsList = new Set(["59f32bb586f774757e1e8442", "59f32c3b86f77472a31742f0", "62a08f4c4f842e1bd12d9d62"]);
+exports.excludedItemsList = new Set([
+    "59f32bb586f774757e1e8442",
+    "59f32c3b86f77472a31742f0",
+    "62a08f4c4f842e1bd12d9d62",
+    "5bead2e00db834001c062938"
+]);

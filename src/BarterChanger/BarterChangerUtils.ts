@@ -1,3 +1,4 @@
+import config from "../../config/config.json"
 export const compoundItemParent = "566162e44bdc2d3f298b4573"
 export const infoParent = "5448ecbe4bdc2d60728b4568"
 export const keyParent = "543be5e94bdc2df1348b4568"
@@ -7,6 +8,7 @@ export const medsParent = "543be5664bdc2dd4348b4569"
 export const specItemParent = "5447e0e74bdc2d3c308b4567"
 export const stackableItemParent = "5661632d4bdc2d903d8b456b"
 export const throwWeaponParent = "543be6564bdc2df4348b4568"
+
 export const excludableParents = [
     compoundItemParent,
     infoParent,
@@ -18,6 +20,9 @@ export const excludableParents = [
     // knifeParent,
     // throwWeaponParent
 ]
+if (!config.MedBarterItems) excludableParents.push(medsParent)
+if (!config.MeleeBarterItems) excludableParents.push(knifeParent)
+if (!config.GrenadeBarterItems) excludableParents.push(throwWeaponParent)
 
 export const knownInternalTraders = new Set(["Fence", "Unknown", "caretaker"])
 
@@ -43,4 +48,8 @@ export const difficulties = {
 }>
 
 
-export const excludedItemsList = new Set(["59f32bb586f774757e1e8442", "59f32c3b86f77472a31742f0", "62a08f4c4f842e1bd12d9d62"])
+export const excludedItemsList = new Set([
+    "59f32bb586f774757e1e8442",
+    "59f32c3b86f77472a31742f0",
+    "62a08f4c4f842e1bd12d9d62",
+    "5bead2e00db834001c062938"])

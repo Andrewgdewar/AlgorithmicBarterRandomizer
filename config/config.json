@@ -1,6 +1,6 @@
 {
     "enable": true,
-    "seed": 0,
+    "seed": 2023,
     "difficulty": "medium",
     "EXAMPLE_DIFFICULTY_Values_FOR_ABOVE": [
         "easy",
@@ -8,9 +8,9 @@
         "hard",
         "masochist"
     ],
-    "enableHardcore": true,
+    "enableHardcore": false,
     "hardcoreSettings": {
-        "cashItemCutoff": 5000,
+        "cashItemCutoff": 10000,
         "disableFlee": true,
         "reduceTraderLoyaltySpendRequirement": true,
         "increaseMinBuyCounts": true,
@@ -21,6 +21,9 @@
         "SteveTheExampleGuyThatHasSalewas",
         "BobJustExampleBob"
     ],
-    "debugCashItems": true,
-    "debug": false
+    "MedBarterItems": true,
+    "MeleeBarterItems": true,
+    "GrenadeBarterItems": true,
+    "debugCashItems": false,
+    "debug": true
 }
