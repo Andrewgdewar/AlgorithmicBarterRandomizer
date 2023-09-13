@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.excludedItemsList = exports.difficulties = exports.moneyType = exports.excludableCashParents = exports.ammoParent = exports.magParent = exports.knownInternalTraders = exports.excludableParents = exports.throwWeaponParent = exports.stackableItemParent = exports.specItemParent = exports.medsParent = exports.mapParent = exports.knifeParent = exports.keyParent = exports.infoParent = exports.compoundItemParent = void 0;
+exports.excludedItemsList = exports.moneyType = exports.excludableCashParents = exports.ammoParent = exports.magParent = exports.knownInternalTraders = exports.excludableParents = exports.throwWeaponParent = exports.stackableItemParent = exports.specItemParent = exports.medsParent = exports.mapParent = exports.knifeParent = exports.keyParent = exports.infoParent = exports.compoundItemParent = void 0;
 const config_json_1 = __importDefault(require("../../config/config.json"));
 exports.compoundItemParent = "566162e44bdc2d3f298b4573";
 exports.infoParent = "5448ecbe4bdc2d60728b4568";
@@ -40,12 +40,6 @@ exports.moneyType = new Set([
     "569668774bdc2da2298b4568",
     "5449016a4bdc2d6f028b456f"
 ]);
-exports.difficulties = {
-    "easy": { barter: 0.5, cash: 0.2 },
-    "medium": { barter: 0.9, cash: 0.6 },
-    "hard": { barter: 1.2, cash: 0.9 },
-    "masochist": { barter: 1.5, cash: 1.2 },
-};
 exports.excludedItemsList = new Set([
     "59f32bb586f774757e1e8442",
     "59f32c3b86f77472a31742f0",

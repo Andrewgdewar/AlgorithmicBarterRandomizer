@@ -1,13 +1,8 @@
 {
     "enable": true,
     "seed": 2023,
-    "difficulty": "medium",
-    "EXAMPLE_DIFFICULTY_Values_FOR_ABOVE": [
-        "easy",
-        "medium",
-        "hard",
-        "masochist"
-    ],
+    "barterCostMultiplier": 0.7,
+    "cashBarterCostMultiplier": 0.5,
     "enableHardcore": false,
     "hardcoreSettings": {
         "cashItemCutoff": 10000,

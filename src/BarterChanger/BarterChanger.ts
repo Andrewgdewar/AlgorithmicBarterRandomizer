@@ -145,7 +145,7 @@ export default function BarterChanger(
             if (config.hardcoreSettings.reduceTraderLoyaltySpendRequirement) {
                 trader.base?.loyaltyLevels.forEach((_, index) => {
                     if (trader.base?.loyaltyLevels[index].minSalesSum)
-                        trader.base.loyaltyLevels[index].minSalesSum *= 0.2
+                        trader.base.loyaltyLevels[index].minSalesSum *= 0.15
                 })
             }
 
@@ -178,17 +178,18 @@ export default function BarterChanger(
             switch (true) {
                 case moneyType.has(barter[0][0]._tpl): //MoneyValue
                     if (!config.enableHardcore || checkParentRecursive(itemId, items, excludableCashParents)) break;
-                    if (value < config.hardcoreSettings.cashItemCutoff) return;
-                    value *= difficulties[config.difficulty].cash
+                    if (isNaN(value) || value < config.hardcoreSettings.cashItemCutoff) break;
+                    value *= config.cashBarterCostMultiplier
                     config.debugCashItems && logger.logWithColor(`${getName(itemId)}`, LogTextColor.YELLOW)
                     config.debugCashItems && logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor.BLUE)
                     const newCashBarter = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, true, new Set([itemId]))
+
+
+                    if (!newCashBarter || !newCashBarter.length) break;
                     let newCashCost = 0
                     config.debugCashItems && newCashBarter.forEach(({ count, _tpl }) => {
                         newCashCost += (count * getPrice(_tpl))
                     })
-
-                    if (!newCashBarter || !newCashBarter.length) break;
                     const cashDeviation =
                         Math.round((newCashCost > originalValue ?
                             (newCashCost - originalValue) / originalValue :
@@ -204,7 +205,7 @@ export default function BarterChanger(
                     barter[0] = newCashBarter
                     break;
                 default:
-                    value *= difficulties[config.difficulty].barter
+                    value *= config.barterCostMultiplier
                     config.debug && logger.logWithColor(`${getName(itemId)} - ${value}`, LogTextColor.YELLOW)
                     let totalCost = 0
 

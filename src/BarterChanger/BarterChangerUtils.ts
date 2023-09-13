@@ -37,15 +37,6 @@ export const moneyType = new Set([
     "5449016a4bdc2d6f028b456f"
 ])
 
-export const difficulties = {
-    "easy": { barter: 0.5, cash: 0.2 },
-    "medium": { barter: 0.9, cash: 0.6 },
-    "hard": { barter: 1.2, cash: 0.9 },
-    "masochist": { barter: 1.5, cash: 1.2 },
-} as Record<string, {
-    barter: number;
-    cash: number;
-}>
 
 
 export const excludedItemsList = new Set([

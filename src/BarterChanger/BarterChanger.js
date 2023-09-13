@@ -123,7 +123,7 @@ function BarterChanger(container) {
             if (config_json_1.default.hardcoreSettings.reduceTraderLoyaltySpendRequirement) {
                 trader.base?.loyaltyLevels.forEach((_, index) => {
                     if (trader.base?.loyaltyLevels[index].minSalesSum)
-                        trader.base.loyaltyLevels[index].minSalesSum *= 0.2;
+                        trader.base.loyaltyLevels[index].minSalesSum *= 0.15;
                 });
             }
             //IncreaseMinBuyCounts
@@ -155,18 +155,18 @@ function BarterChanger(container) {
                 case BarterChangerUtils_1.moneyType.has(barter[0][0]._tpl): //MoneyValue
                     if (!config_json_1.default.enableHardcore || (0, utils_1.checkParentRecursive)(itemId, items, BarterChangerUtils_1.excludableCashParents))
                         break;
-                    if (value < config_json_1.default.hardcoreSettings.cashItemCutoff)
-                        return;
-                    value *= BarterChangerUtils_1.difficulties[config_json_1.default.difficulty].cash;
+                    if (isNaN(value) || value < config_json_1.default.hardcoreSettings.cashItemCutoff)
+                        break;
+                    value *= config_json_1.default.cashBarterCostMultiplier;
                     config_json_1.default.debugCashItems && logger.logWithColor(`${getName(itemId)}`, LogTextColor_1.LogTextColor.YELLOW);
                     config_json_1.default.debugCashItems && logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor_1.LogTextColor.BLUE);
                     const newCashBarter = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, true, new Set([itemId]));
+                    if (!newCashBarter || !newCashBarter.length)
+                        break;
                     let newCashCost = 0;
                     config_json_1.default.debugCashItems && newCashBarter.forEach(({ count, _tpl }) => {
                         newCashCost += (count * getPrice(_tpl));
                     });
-                    if (!newCashBarter || !newCashBarter.length)
-                        break;
                     const cashDeviation = Math.round((newCashCost > originalValue ?
                         (newCashCost - originalValue) / originalValue :
                         (originalValue - newCashCost) / originalValue) * 100) * (newCashCost > originalValue ? 1 : -1);
@@ -177,7 +177,7 @@ function BarterChanger(container) {
                     barter[0] = newCashBarter;
                     break;
                 default:
-                    value *= BarterChangerUtils_1.difficulties[config_json_1.default.difficulty].barter;
+                    value *= config_json_1.default.barterCostMultiplier;
                     config_json_1.default.debug && logger.logWithColor(`${getName(itemId)} - ${value}`, LogTextColor_1.LogTextColor.YELLOW);
                     let totalCost = 0;
                     barter[0].forEach(({ count, _tpl }) => {
