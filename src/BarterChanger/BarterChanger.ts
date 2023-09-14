@@ -65,6 +65,7 @@ export default function BarterChanger(
 
     Object.keys(traders).forEach((traderId) => {
         const trader = traders[traderId]
+        if (!tradersToInclude.has(trader.base.nickname)) return
         trader?.assort?.items.forEach(item => {
             tradeItemMapper[item._id] = item._tpl
         })
@@ -171,7 +172,7 @@ export default function BarterChanger(
         Object.keys(barters).forEach(barterId => {
             const itemId = tradeItemMapper[barterId]
             const barter = barters[barterId]
-            if (!barter?.[0]?.[0]?._tpl) return
+            if (!barter?.[0]?.[0]?._tpl || !items?.[itemId]?._parent) return
             const offer = ragFairServer.getOffer(barterId)
             let value = Math.max(offer.itemsCost, offer.summaryCost, getPrice(itemId))
             const originalValue = value

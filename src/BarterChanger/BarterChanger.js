@@ -146,7 +146,7 @@ function BarterChanger(container) {
         Object.keys(barters).forEach(barterId => {
             const itemId = tradeItemMapper[barterId];
             const barter = barters[barterId];
-            if (!barter?.[0]?.[0]?._tpl)
+            if (!barter?.[0]?.[0]?._tpl || items[itemId])
                 return;
             const offer = ragFairServer.getOffer(barterId);
             let value = Math.max(offer.itemsCost, offer.summaryCost, getPrice(itemId));
