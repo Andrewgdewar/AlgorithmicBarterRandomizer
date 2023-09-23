@@ -29,15 +29,14 @@ export const knownInternalTraders = new Set(["Fence", "Unknown", "caretaker"])
 export const magParent = "5448bc234bdc2d3c308b4569"
 export const ammoParent = "5485a8684bdc2da71d8b4567"
 
-export const excludableCashParents = [magParent, ammoParent, specItemParent]
+export const excludableCashParents = [ammoParent, specItemParent]
+if (config.hardcoreSettings.excludeMagBarters) excludableCashParents.push(magParent)
 
 export const moneyType = new Set([
     "5696686a4bdc2da3298b456a",
     "569668774bdc2da2298b4568",
     "5449016a4bdc2d6f028b456f"
 ])
-
-
 
 export const excludedItemsList = new Set([
     "59f32bb586f774757e1e8442",

@@ -34,7 +34,9 @@ if (!config_json_1.default.GrenadeBarterItems)
 exports.knownInternalTraders = new Set(["Fence", "Unknown", "caretaker"]);
 exports.magParent = "5448bc234bdc2d3c308b4569";
 exports.ammoParent = "5485a8684bdc2da71d8b4567";
-exports.excludableCashParents = [exports.magParent, exports.ammoParent, exports.specItemParent];
+exports.excludableCashParents = [exports.ammoParent, exports.specItemParent];
+if (config_json_1.default.hardcoreSettings.excludeMagBarters)
+    exports.excludableCashParents.push(exports.magParent);
 exports.moneyType = new Set([
     "5696686a4bdc2da3298b456a",
     "569668774bdc2da2298b4568",

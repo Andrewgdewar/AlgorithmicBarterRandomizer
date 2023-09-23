@@ -31,6 +31,9 @@ Example order.json with recommended mods:
     //Change this to change the randomizer, share seeds and difficulty with friends to get the same outcome!
     "seed": 2023,
 
+    // This is the difficulty setting, lower is easier, higher is harder; around 0.7 is similar to live tarkov.
+    "barterCostMultiplier": 0.6,
+
     // This turns on hardcore, which changes most cash items to barters (excluding ammo/mags)
     "enableHardcore": false,
 
@@ -53,6 +56,9 @@ Example order.json with recommended mods:
 
         // This is to balance the player using fence for everything 
         "reduceTraderBuyPrice": true
+
+        // Excludes mags from the barter algorithm, turn this off to have to barter for them
+         "excludeMagBarters": true
     },
 
     //Turn this on to figure out the correct custom trader name to add to the below "customTradersToInclude"
