@@ -1,5 +1,5 @@
 {
-    "enable": true,
+    "enable": false,
     "seed": 1999,
     "barterCostMultiplier": 0.6,
     "enableHardcore": false,

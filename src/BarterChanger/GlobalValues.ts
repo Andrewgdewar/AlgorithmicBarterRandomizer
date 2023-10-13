@@ -169,7 +169,7 @@ export class globalValues {
                 const barter = barters[barterId]
                 if (!barter?.[0]?.[0]?._tpl || !items?.[itemId]?._parent) return
                 const offer = this.ragFairServer.getOffer(barterId)
-                let value = Math.max(offer.itemsCost, offer.summaryCost, getPrice(itemId))
+                let value = Math.max(offer?.itemsCost, offer?.summaryCost, getPrice(itemId))
                 const originalValue = value
                 switch (true) {
                     case moneyType.has(barter[0][0]._tpl): //MoneyValue
