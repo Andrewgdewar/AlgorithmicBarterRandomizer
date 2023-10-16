@@ -2,13 +2,8 @@ import { StaticRouterModService } from '@spt-aki/services/mod/staticRouter/Stati
 import { ILogger } from './../../types/models/spt/utils/ILogger.d';
 import { DatabaseServer } from "@spt-aki/servers/DatabaseServer";
 import { DependencyContainer } from "tsyringe";
-import config from "../../config/config.json"
-import { excludableCashParents, excludableParents, excludedItemsList, knownInternalTraders, moneyType } from "./BarterChangerUtils";
-import { checkParentRecursive, seededRandom } from "../utils";
-import { IBarterScheme } from '@spt-aki/models/eft/common/tables/ITrader';
-import { RagfairServer } from "@spt-aki/servers/RagfairServer";
-import { LogTextColor } from "@spt-aki/models/spt/logging/LogTextColor";
 import { globalValues } from './GlobalValues';
+import { RagfairOfferService } from '@spt-aki/services/RagfairOfferService';
 
 
 export const BarterChanger = (
@@ -33,6 +28,6 @@ export const GlobalValueSetup = (
 ) => {
     globalValues.tables = container.resolve<DatabaseServer>("DatabaseServer").getTables();
     globalValues.Logger = container.resolve<ILogger>("WinstonLogger")
-    globalValues.ragFairServer = container.resolve<RagfairServer>("RagfairServer");
+    globalValues.RagfairOfferService = container.resolve<RagfairOfferService>("RagfairOfferService");
 }
 

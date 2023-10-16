@@ -1,21 +1,21 @@
 import { ILogger } from "@spt-aki/models/spt/utils/ILogger";
 import { IDatabaseTables } from "@spt-aki/models/spt/server/IDatabaseTables";
 import config from "../../config/config.json"
-import { RagfairServer } from '@spt-aki/servers/RagfairServer';
 import { checkParentRecursive, seededRandom } from "../utils";
 import { excludableCashParents, excludableParents, excludedItemsList, knownInternalTraders, moneyType } from "./BarterChangerUtils";
 import { IBarterScheme } from "@spt-aki/models/eft/common/tables/ITrader";
 import { LogTextColor } from "@spt-aki/models/spt/logging/LogTextColor";
+import { RagfairOfferService } from "@spt-aki/services/RagfairOfferService";
+import { IRagfairOffer } from "@spt-aki/models/eft/ragfair/IRagfairOffer";
 
 export class globalValues {
     public static Logger: ILogger;
     public static tables: IDatabaseTables;
-    public static ragFairServer: RagfairServer
+    public static RagfairOfferService: RagfairOfferService
     public static config = config
 
     public static updateBarters() {
         const tables = this.tables
-
         const items = tables.templates.items;
         const flee = tables.globals.config.RagFair;
         const prices = tables.templates.prices
@@ -55,6 +55,14 @@ export class globalValues {
         handbook.Items.forEach(({ Id, Price }) => {
             handbookMapper[Id] = Price
         })
+
+        const getFleaPrice = (itemID: string): number => {
+            if (typeof prices[itemID] != "undefined") {
+                return prices[itemID]
+            } else {
+                return handbookMapper[itemID]
+            }
+        }
 
         const tradeItemMapper = {}
 
@@ -125,23 +133,34 @@ export class globalValues {
             return getNewBarterList(randomSeed + ongoingCost, ongoingCost, newBarterList, originalTotalCost, isCash, itemSet)
         }
 
+        const allOffers = this.RagfairOfferService.getOffers().filter((offer) => offer.user.memberType === 4)
+
+        const getTradeOfferId = (offers: IRagfairOffer[], targetItem: string, originalFirstTradeId: string): string | undefined => {
+            const offer = offers.find((offer) => offer.items[0]._tpl === targetItem && offer.requirements[0]._tpl === originalFirstTradeId)
+            return offer?._id
+        }
+
         let tradeItemsChanged = 0
         let cashItemsChanged = 0
         let averageDeviation = 0
         let averageCashDeviation = 0
         Object.keys(traders).forEach((traderId) => {
             const trader = traders[traderId]
-            const name = trader.base.nickname
-            if (!tradersToInclude.has(name)) {
-                (config.printUnkownTraders && !knownInternalTraders.has(name)) && this.Logger.logWithColor(`AlgorithmicBarterRandomizer: Unknown trader detected: ${name}`, LogTextColor.MAGENTA)
+            const traderName = trader.base.nickname
+            if (!tradersToInclude.has(traderName)) {
+                (config.printUnkownTraders && !knownInternalTraders.has(traderName)) && this.Logger.logWithColor(`AlgorithmicBarterRandomizer: Unknown trader detected: ${traderName}`, LogTextColor.MAGENTA)
                 return;
             }
+
+            const traderBartersOnFlea = allOffers.filter((offer) => offer.user.id === traderId && !moneyType.has(offer.requirements[0]._tpl))
+            const traderCashOnFlea = allOffers.filter((offer) => offer.user.id === traderId && moneyType.has(offer.requirements[0]._tpl))
+
             if (config.enableHardcore) {
                 //reduceTraderLoyaltySpendRequirement
                 if (config.hardcoreSettings.reduceTraderLoyaltySpendRequirement) {
                     trader.base?.loyaltyLevels.forEach((_, index) => {
                         if (trader.base?.loyaltyLevels[index].minSalesSum)
-                            trader.base.loyaltyLevels[index].minSalesSum *= 0.15
+                            trader.base.loyaltyLevels[index].minSalesSum = index * 100000
                     })
                 }
 
@@ -157,31 +176,35 @@ export class globalValues {
                 if (config.hardcoreSettings.reduceTraderBuyPrice) {
                     trader.base?.loyaltyLevels.forEach((_, index) => {
                         if (trader?.base?.loyaltyLevels?.[index])
-                            trader.base.loyaltyLevels[index].buy_price_coef *= 1.5
+                            trader.base.loyaltyLevels[index].buy_price_coef = 75
                     })
                 }
             }
 
             const barters = trader.assort.barter_scheme
-
             Object.keys(barters).forEach(barterId => {
                 const itemId = tradeItemMapper[barterId]
                 const barter = barters[barterId]
                 if (!barter?.[0]?.[0]?._tpl || !items?.[itemId]?._parent) return
-                const offer = this.ragFairServer.getOffer(barterId)
-                let value = Math.max(offer?.itemsCost, offer?.summaryCost, getPrice(itemId))
-                const originalValue = value
+                const originalValue = getFleaPrice(itemId)
+                const value = originalValue * config.barterCostMultiplier
                 switch (true) {
                     case moneyType.has(barter[0][0]._tpl): //MoneyValue
                         if (!config.enableHardcore || checkParentRecursive(itemId, items, excludableCashParents)) break;
-                        if (isNaN(value) || value < config.hardcoreSettings.cashItemCutoff) break;
-                        value *= config.barterCostMultiplier
+                        if (originalValue < config.hardcoreSettings.cashItemCutoff) break;
+
+                        const cashOfferId = getTradeOfferId(traderCashOnFlea, itemId, barter[0][0]._tpl)
+                        if (!cashOfferId) {
+                            this.Logger.info(`Unable to find Flea Offer for item: ${items[itemId]?._name} sold by ${traderName}`)
+                            break;
+                        }
+
                         config.debugCashItems && this.Logger.logWithColor(`${getName(itemId)}`, LogTextColor.YELLOW)
                         config.debugCashItems && this.Logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor.BLUE)
                         const newCashBarter = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, true, new Set([itemId]))
 
-
                         if (!newCashBarter || !newCashBarter.length) break;
+
                         let newCashCost = 0
                         config.debugCashItems && newCashBarter.forEach(({ count, _tpl }) => {
                             newCashCost += (count * getPrice(_tpl))
@@ -195,13 +218,12 @@ export class globalValues {
                             newCashCost > originalValue ? LogTextColor.RED : LogTextColor.GREEN
                         )
                         cashItemsChanged++
-
+                        const cashOfferForUpdate = this.RagfairOfferService.getOfferByOfferId(cashOfferId)
                         averageCashDeviation += cashDeviation
-                        offer.requirements = newCashBarter.map((barterInfo: { _tpl: string, count: number }) => ({ ...barterInfo, onlyFunctional: false }))
+                        cashOfferForUpdate.requirements = newCashBarter.map((barterInfo: { _tpl: string, count: number }) => ({ ...barterInfo, onlyFunctional: false }))
                         barter[0] = newCashBarter
                         break;
                     default:
-                        value *= config.barterCostMultiplier
                         config.debug && this.Logger.logWithColor(`${getName(itemId)} - ${value}`, LogTextColor.YELLOW)
                         let totalCost = 0
 
@@ -210,6 +232,12 @@ export class globalValues {
                             totalCost += (count * getPrice(_tpl))
                         })
 
+                        const offerId = getTradeOfferId(traderBartersOnFlea, itemId, barter[0][0]._tpl)
+
+                        if (!offerId) {
+                            this.Logger.info(`Unable to find Flea Offer for item: ${items[itemId]?._name} bartered by ${traderName}`)
+                            break;
+                        }
 
                         const newBarters = getNewBarterList((barterId + itemId).replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, false, new Set([itemId]))
 
@@ -230,11 +258,13 @@ export class globalValues {
                             `${newCost > originalValue ? "MORE THAN" : "LESS THAN"} actual value ${deviation}%`,
                             newCost > originalValue ? LogTextColor.RED : LogTextColor.GREEN
                         )
+                        const actualOfferForUpdate = this.RagfairOfferService.getOfferByOfferId(offerId)
+                        if (!actualOfferForUpdate) this.Logger.info(`Unable to find: ${items[itemId]?._name} bartered by ${traderName}`)
 
                         config.debug && console.log("\n")
 
                         tradeItemsChanged++
-                        offer.requirements = newBarters.map((barterInfo: { _tpl: string, count: number }) => ({ ...barterInfo, onlyFunctional: false }))
+                        actualOfferForUpdate.requirements = newBarters.map((barterInfo: { _tpl: string, count: number }) => ({ ...barterInfo, onlyFunctional: false }))
                         barter[0] = newBarters
                         break;
                 }

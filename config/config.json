@@ -1,6 +1,6 @@
 {
-    "enable": false,
-    "seed": 1999,
+    "enable": true,
+    "seed": 2023,
     "barterCostMultiplier": 0.6,
     "enableHardcore": false,
     "hardcoreSettings": {

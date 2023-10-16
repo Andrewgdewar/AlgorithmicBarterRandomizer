@@ -9,6 +9,10 @@ const utils_1 = require("../utils");
 const BarterChangerUtils_1 = require("./BarterChangerUtils");
 const LogTextColor_1 = require("C:/snapshot/project/obj/models/spt/logging/LogTextColor");
 class globalValues {
+    static Logger;
+    static tables;
+    static RagfairOfferService;
+    static config = config_json_1.default;
     static updateBarters() {
         const tables = this.tables;
         const items = tables.templates.items;
@@ -44,6 +48,14 @@ class globalValues {
         handbook.Items.forEach(({ Id, Price }) => {
             handbookMapper[Id] = Price;
         });
+        const getFleaPrice = (itemID) => {
+            if (typeof prices[itemID] != "undefined") {
+                return prices[itemID];
+            }
+            else {
+                return handbookMapper[itemID];
+            }
+        };
         const tradeItemMapper = {};
         Object.keys(traders).forEach((traderId) => {
             const trader = traders[traderId];
@@ -108,23 +120,30 @@ class globalValues {
                 return newBarterList;
             return getNewBarterList(randomSeed + ongoingCost, ongoingCost, newBarterList, originalTotalCost, isCash, itemSet);
         };
+        const allOffers = this.RagfairOfferService.getOffers().filter((offer) => offer.user.memberType === 4);
+        const getTradeOfferId = (offers, targetItem, originalFirstTradeId) => {
+            const offer = offers.find((offer) => offer.items[0]._tpl === targetItem && offer.requirements[0]._tpl === originalFirstTradeId);
+            return offer?._id;
+        };
         let tradeItemsChanged = 0;
         let cashItemsChanged = 0;
         let averageDeviation = 0;
         let averageCashDeviation = 0;
         Object.keys(traders).forEach((traderId) => {
             const trader = traders[traderId];
-            const name = trader.base.nickname;
-            if (!tradersToInclude.has(name)) {
-                (config_json_1.default.printUnkownTraders && !BarterChangerUtils_1.knownInternalTraders.has(name)) && this.Logger.logWithColor(`AlgorithmicBarterRandomizer: Unknown trader detected: ${name}`, LogTextColor_1.LogTextColor.MAGENTA);
+            const traderName = trader.base.nickname;
+            if (!tradersToInclude.has(traderName)) {
+                (config_json_1.default.printUnkownTraders && !BarterChangerUtils_1.knownInternalTraders.has(traderName)) && this.Logger.logWithColor(`AlgorithmicBarterRandomizer: Unknown trader detected: ${traderName}`, LogTextColor_1.LogTextColor.MAGENTA);
                 return;
             }
+            const traderBartersOnFlea = allOffers.filter((offer) => offer.user.id === traderId && !BarterChangerUtils_1.moneyType.has(offer.requirements[0]._tpl));
+            const traderCashOnFlea = allOffers.filter((offer) => offer.user.id === traderId && BarterChangerUtils_1.moneyType.has(offer.requirements[0]._tpl));
             if (config_json_1.default.enableHardcore) {
                 //reduceTraderLoyaltySpendRequirement
                 if (config_json_1.default.hardcoreSettings.reduceTraderLoyaltySpendRequirement) {
                     trader.base?.loyaltyLevels.forEach((_, index) => {
                         if (trader.base?.loyaltyLevels[index].minSalesSum)
-                            trader.base.loyaltyLevels[index].minSalesSum *= 0.15;
+                            trader.base.loyaltyLevels[index].minSalesSum = index * 100000;
                     });
                 }
                 //IncreaseMinBuyCounts
@@ -139,7 +158,7 @@ class globalValues {
                 if (config_json_1.default.hardcoreSettings.reduceTraderBuyPrice) {
                     trader.base?.loyaltyLevels.forEach((_, index) => {
                         if (trader?.base?.loyaltyLevels?.[index])
-                            trader.base.loyaltyLevels[index].buy_price_coef *= 1.5;
+                            trader.base.loyaltyLevels[index].buy_price_coef = 75;
                     });
                 }
             }
@@ -149,16 +168,19 @@ class globalValues {
                 const barter = barters[barterId];
                 if (!barter?.[0]?.[0]?._tpl || !items?.[itemId]?._parent)
                     return;
-                const offer = this.ragFairServer.getOffer(barterId);
-                let value = Math.max(offer?.itemsCost, offer?.summaryCost, getPrice(itemId));
-                const originalValue = value;
+                const originalValue = getFleaPrice(itemId);
+                const value = originalValue * config_json_1.default.barterCostMultiplier;
                 switch (true) {
                     case BarterChangerUtils_1.moneyType.has(barter[0][0]._tpl): //MoneyValue
                         if (!config_json_1.default.enableHardcore || (0, utils_1.checkParentRecursive)(itemId, items, BarterChangerUtils_1.excludableCashParents))
                             break;
-                        if (isNaN(value) || value < config_json_1.default.hardcoreSettings.cashItemCutoff)
+                        if (originalValue < config_json_1.default.hardcoreSettings.cashItemCutoff)
                             break;
-                        value *= config_json_1.default.barterCostMultiplier;
+                        const cashOfferId = getTradeOfferId(traderCashOnFlea, itemId, barter[0][0]._tpl);
+                        if (!cashOfferId) {
+                            this.Logger.info(`Unable to find Flea Offer for item: ${items[itemId]?._name} sold by ${traderName}`);
+                            break;
+                        }
                         config_json_1.default.debugCashItems && this.Logger.logWithColor(`${getName(itemId)}`, LogTextColor_1.LogTextColor.YELLOW);
                         config_json_1.default.debugCashItems && this.Logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor_1.LogTextColor.BLUE);
                         const newCashBarter = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, true, new Set([itemId]));
@@ -173,18 +195,23 @@ class globalValues {
                             (originalValue - newCashCost) / originalValue) * 100) * (newCashCost > originalValue ? 1 : -1);
                         config_json_1.default.debugCashItems && this.Logger.logWithColor(`${newCashCost > originalValue ? "MORE THAN" : "LESS THAN"} actual value ${cashDeviation}%\n`, newCashCost > originalValue ? LogTextColor_1.LogTextColor.RED : LogTextColor_1.LogTextColor.GREEN);
                         cashItemsChanged++;
+                        const cashOfferForUpdate = this.RagfairOfferService.getOfferByOfferId(cashOfferId);
                         averageCashDeviation += cashDeviation;
-                        offer.requirements = newCashBarter.map((barterInfo) => ({ ...barterInfo, onlyFunctional: false }));
+                        cashOfferForUpdate.requirements = newCashBarter.map((barterInfo) => ({ ...barterInfo, onlyFunctional: false }));
                         barter[0] = newCashBarter;
                         break;
                     default:
-                        value *= config_json_1.default.barterCostMultiplier;
                         config_json_1.default.debug && this.Logger.logWithColor(`${getName(itemId)} - ${value}`, LogTextColor_1.LogTextColor.YELLOW);
                         let totalCost = 0;
                         barter[0].forEach(({ count, _tpl }) => {
                             config_json_1.default.debug && this.Logger.logWithColor(`${count} x ${getName(_tpl)} ${getPrice(barter[0][0]._tpl)}`, LogTextColor_1.LogTextColor.MAGENTA);
                             totalCost += (count * getPrice(_tpl));
                         });
+                        const offerId = getTradeOfferId(traderBartersOnFlea, itemId, barter[0][0]._tpl);
+                        if (!offerId) {
+                            this.Logger.info(`Unable to find Flea Offer for item: ${items[itemId]?._name} bartered by ${traderName}`);
+                            break;
+                        }
                         const newBarters = getNewBarterList((barterId + itemId).replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, false, new Set([itemId]));
                         if (!newBarters || !newBarters.length)
                             break;
@@ -197,9 +224,12 @@ class globalValues {
                         const deviation = Math.round((newCost > originalValue ? (newCost - originalValue) / originalValue : (originalValue - newCost) / originalValue) * 100) * (newCost > originalValue ? 1 : -1);
                         averageDeviation += deviation;
                         config_json_1.default.debug && this.Logger.logWithColor(`${newCost > originalValue ? "MORE THAN" : "LESS THAN"} actual value ${deviation}%`, newCost > originalValue ? LogTextColor_1.LogTextColor.RED : LogTextColor_1.LogTextColor.GREEN);
+                        const actualOfferForUpdate = this.RagfairOfferService.getOfferByOfferId(offerId);
+                        if (!actualOfferForUpdate)
+                            this.Logger.info(`Unable to find: ${items[itemId]?._name} bartered by ${traderName}`);
                         config_json_1.default.debug && console.log("\n");
                         tradeItemsChanged++;
-                        offer.requirements = newBarters.map((barterInfo) => ({ ...barterInfo, onlyFunctional: false }));
+                        actualOfferForUpdate.requirements = newBarters.map((barterInfo) => ({ ...barterInfo, onlyFunctional: false }));
                         barter[0] = newBarters;
                         break;
                 }
@@ -213,4 +243,3 @@ class globalValues {
     }
 }
 exports.globalValues = globalValues;
-globalValues.config = config_json_1.default;

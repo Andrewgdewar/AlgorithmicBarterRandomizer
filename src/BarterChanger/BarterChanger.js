@@ -17,6 +17,6 @@ exports.BarterChanger = BarterChanger;
 const GlobalValueSetup = (container) => {
     GlobalValues_1.globalValues.tables = container.resolve("DatabaseServer").getTables();
     GlobalValues_1.globalValues.Logger = container.resolve("WinstonLogger");
-    GlobalValues_1.globalValues.ragFairServer = container.resolve("RagfairServer");
+    GlobalValues_1.globalValues.RagfairOfferService = container.resolve("RagfairOfferService");
 };
 exports.GlobalValueSetup = GlobalValueSetup;
