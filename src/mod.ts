@@ -15,5 +15,3 @@ class AlgorithmicBarterRandomizer implements IPreAkiLoadMod, IPostAkiLoadMod {
 }
 
 module.exports = { mod: new AlgorithmicBarterRandomizer() }
-
-

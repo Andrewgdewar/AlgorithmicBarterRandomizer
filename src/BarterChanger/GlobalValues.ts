@@ -7,14 +7,69 @@ import { IBarterScheme } from "@spt-aki/models/eft/common/tables/ITrader";
 import { LogTextColor } from "@spt-aki/models/spt/logging/LogTextColor";
 import { RagfairOfferService } from "@spt-aki/services/RagfairOfferService";
 import { IRagfairOffer } from "@spt-aki/models/eft/ragfair/IRagfairOffer";
+import { TraderController } from "@spt-aki/controllers/TraderController";
+
+
+//   // This turns on hardcore, which changes most cash items to barters (excluding ammo/mags)
+//   "enableHardcore": false,
+
+//   // These are the recommended settings for hardcore, feel free to change them if desired.
+//   "hardcoreSettings": {
+
+//       // This allows a few of the cheaper items to be purchasable with cash 
+//       // Be aware: this isn't a 1:1 rouble value.
+//       "cashItemCutoff": 10000,
+
+//       // Disables the open flee market (you can still use it to look for trader items)
+//       "disableFlee": true,
+
+//       // Traders' loyalty requirement of cash spent is drastically reduced
+//       // This is to compensate for less cash being used in general
+//       "reduceTraderLoyaltySpendRequirement": true,
+
+//       // Increases minimum buy counts from 1 > 5 for traded items 
+//       "increaseMinBuyCounts": true,
+
+//       // This is to balance the player using fence for everything 
+//       "reduceTraderBuyPrice": true
+
+//       // Excludes mags from the barter algorithm, turn this off to have to barter for them
+//        "excludeMagBarters": true
+//   },
+
+// "enableHardcore": false,
+// "hardcoreSettings": {
+//     "cashItemCutoff": 10000,
+//     "disableFlee": true,
+//     "reduceTraderLoyaltySpendRequirement": true,
+//     "increaseMinBuyCounts": true,
+//     "reduceTraderBuyPrice": true,
+//     "excludeMagBarters": true
+// },
 
 export class globalValues {
+    public static traderController: TraderController
     public static Logger: ILogger;
     public static tables: IDatabaseTables;
     public static RagfairOfferService: RagfairOfferService
     public static config = config
+    public static timeUntilNextUpdate = Date.now()
+    public static pendingCountDown = false
 
-    public static updateBarters() {
+    public static updateBarters(time?: number) {
+        if (time) {
+            if (this.pendingCountDown) return;
+            const now = Date.now() / 1000
+            if (time < now) return this.updateBarters()
+            const timeDiff = (((time - now) - 1) * 1000)
+            this.config.debug && console.log("Will update barters in", Math.round(((timeDiff / 1000) / 60) * 100) / 100, "Minutes")
+            this.pendingCountDown = true
+            return setTimeout(() => {
+                this.pendingCountDown = false
+                this.updateBarters()
+            }, timeDiff)
+        }
+
         const tables = this.tables
         const items = tables.templates.items;
         const flee = tables.globals.config.RagFair;
@@ -25,7 +80,7 @@ export class globalValues {
         const locales = tables.locales
         const local = locales.global.en
 
-        if (config.enableHardcore && config.hardcoreSettings.disableFlee) flee.minUserLevel = 99
+        // if (config.enableHardcore && config.hardcoreSettings.disableFlee) flee.minUserLevel = 99
 
         const tradersToInclude = new Set([
             "Prapor",
@@ -153,33 +208,33 @@ export class globalValues {
             }
 
             const traderBartersOnFlea = allOffers.filter((offer) => offer.user.id === traderId && !moneyType.has(offer.requirements[0]._tpl))
-            const traderCashOnFlea = allOffers.filter((offer) => offer.user.id === traderId && moneyType.has(offer.requirements[0]._tpl))
+            // const traderCashOnFlea = allOffers.filter((offer) => offer.user.id === traderId && moneyType.has(offer.requirements[0]._tpl))
 
-            if (config.enableHardcore) {
-                //reduceTraderLoyaltySpendRequirement
-                if (config.hardcoreSettings.reduceTraderLoyaltySpendRequirement) {
-                    trader.base?.loyaltyLevels.forEach((_, index) => {
-                        if (trader.base?.loyaltyLevels[index].minSalesSum)
-                            trader.base.loyaltyLevels[index].minSalesSum = index * 100000
-                    })
-                }
+            // if (config.enableHardcore) {
+            //     //reduceTraderLoyaltySpendRequirement
+            //     if (config.hardcoreSettings.reduceTraderLoyaltySpendRequirement) {
+            //         trader.base?.loyaltyLevels.forEach((_, index) => {
+            //             if (trader.base?.loyaltyLevels[index].minSalesSum)
+            //                 traders[traderId].base.loyaltyLevels[index].minSalesSum = index * 100000
+            //         })
+            //     }
 
-                //IncreaseMinBuyCounts
-                if (config.hardcoreSettings.increaseMinBuyCounts) {
-                    trader?.assort?.items.forEach((_, index) => {
-                        const restriction = trader?.assort?.items[index]?.upd?.BuyRestrictionMax
-                        if (restriction && restriction < 5) trader.assort.items[index].upd.BuyRestrictionMax = 5
-                    })
-                }
+            //     //IncreaseMinBuyCounts
+            //     if (config.hardcoreSettings.increaseMinBuyCounts) {
+            //         trader?.assort?.items.forEach((_, index) => {
+            //             const restriction = trader?.assort?.items[index]?.upd?.BuyRestrictionMax
+            //             if (restriction && restriction < 5) trader.assort.items[index].upd.BuyRestrictionMax = 5
+            //         })
+            //     }
 
-                //reduceTraderBuyPrice
-                if (config.hardcoreSettings.reduceTraderBuyPrice) {
-                    trader.base?.loyaltyLevels.forEach((_, index) => {
-                        if (trader?.base?.loyaltyLevels?.[index])
-                            trader.base.loyaltyLevels[index].buy_price_coef = 75
-                    })
-                }
-            }
+            //     //reduceTraderBuyPrice
+            //     if (config.hardcoreSettings.reduceTraderBuyPrice) {
+            //         trader.base?.loyaltyLevels.forEach((_, index) => {
+            //             if (trader?.base?.loyaltyLevels?.[index])
+            //                 trader.base.loyaltyLevels[index].buy_price_coef = 75
+            //         })
+            //     }
+            // }
 
             const barters = trader.assort.barter_scheme
             Object.keys(barters).forEach(barterId => {
@@ -190,38 +245,38 @@ export class globalValues {
                 const value = originalValue * config.barterCostMultiplier
                 switch (true) {
                     case moneyType.has(barter[0][0]._tpl): //MoneyValue
-                        if (!config.enableHardcore || checkParentRecursive(itemId, items, excludableCashParents)) break;
-                        if (originalValue < config.hardcoreSettings.cashItemCutoff) break;
+                        // if (!config.enableHardcore || checkParentRecursive(itemId, items, excludableCashParents)) break;
+                        // if (originalValue < config.hardcoreSettings.cashItemCutoff) break;
 
-                        const cashOfferId = getTradeOfferId(traderCashOnFlea, itemId, barter[0][0]._tpl)
-                        if (!cashOfferId) {
-                            this.Logger.info(`Unable to find Flea Offer for item: ${items[itemId]?._name} sold by ${traderName}`)
-                            break;
-                        }
+                        // const cashOfferId = getTradeOfferId(traderCashOnFlea, itemId, barter[0][0]._tpl)
+                        // if (!cashOfferId) {
+                        //     this.Logger.info(`Unable to find Flea Offer for item: ${items[itemId]?._name} sold by ${traderName}`)
+                        //     break;
+                        // }
 
-                        config.debugCashItems && this.Logger.logWithColor(`${getName(itemId)}`, LogTextColor.YELLOW)
-                        config.debugCashItems && this.Logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor.BLUE)
-                        const newCashBarter = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, true, new Set([itemId]))
+                        // config.debugCashItems && this.Logger.logWithColor(`${getName(itemId)}`, LogTextColor.YELLOW)
+                        // config.debugCashItems && this.Logger.logWithColor(`${value} ${barter[0][0].count} ${getName(barter[0][0]._tpl)}`, LogTextColor.BLUE)
+                        // const newCashBarter = getNewBarterList(barterId.replace(/[^a-z0-9-]/g, ''), undefined, undefined, value, true, new Set([itemId]))
 
-                        if (!newCashBarter || !newCashBarter.length) break;
+                        // if (!newCashBarter || !newCashBarter.length) break;
 
-                        let newCashCost = 0
-                        config.debugCashItems && newCashBarter.forEach(({ count, _tpl }) => {
-                            newCashCost += (count * getPrice(_tpl))
-                        })
-                        const cashDeviation =
-                            Math.round((newCashCost > originalValue ?
-                                (newCashCost - originalValue) / originalValue :
-                                (originalValue - newCashCost) / originalValue) * 100) * (newCashCost > originalValue ? 1 : -1)
-                        config.debugCashItems && this.Logger.logWithColor(
-                            `${newCashCost > originalValue ? "MORE THAN" : "LESS THAN"} actual value ${cashDeviation}%\n`,
-                            newCashCost > originalValue ? LogTextColor.RED : LogTextColor.GREEN
-                        )
-                        cashItemsChanged++
-                        const cashOfferForUpdate = this.RagfairOfferService.getOfferByOfferId(cashOfferId)
-                        averageCashDeviation += cashDeviation
-                        cashOfferForUpdate.requirements = newCashBarter.map((barterInfo: { _tpl: string, count: number }) => ({ ...barterInfo, onlyFunctional: false }))
-                        barter[0] = newCashBarter
+                        // let newCashCost = 0
+                        // config.debugCashItems && newCashBarter.forEach(({ count, _tpl }) => {
+                        //     newCashCost += (count * getPrice(_tpl))
+                        // })
+                        // const cashDeviation =
+                        //     Math.round((newCashCost > originalValue ?
+                        //         (newCashCost - originalValue) / originalValue :
+                        //         (originalValue - newCashCost) / originalValue) * 100) * (newCashCost > originalValue ? 1 : -1)
+                        // config.debugCashItems && this.Logger.logWithColor(
+                        //     `${newCashCost > originalValue ? "MORE THAN" : "LESS THAN"} actual value ${cashDeviation}%\n`,
+                        //     newCashCost > originalValue ? LogTextColor.RED : LogTextColor.GREEN
+                        // )
+                        // cashItemsChanged++
+                        // const cashOfferForUpdate = this.RagfairOfferService.getOfferByOfferId(cashOfferId)
+                        // averageCashDeviation += cashDeviation
+                        // cashOfferForUpdate.requirements = newCashBarter.map((barterInfo: { _tpl: string, count: number }) => ({ ...barterInfo, onlyFunctional: false }))
+                        // barter[0] = newCashBarter
                         break;
                     default:
                         config.debug && this.Logger.logWithColor(`${getName(itemId)} - ${value}`, LogTextColor.YELLOW)
@@ -278,5 +333,6 @@ export class globalValues {
         config.debug && this.Logger.logWithColor(`FinalDeviation ${finalDeviation}%\n`, LogTextColor.YELLOW)
 
         this.Logger.info(`AlgorithmicBarterRandomizer: Updated ${tradeItemsChanged + cashItemsChanged} item barters`)
+        this.traderController.update()
     }
 }

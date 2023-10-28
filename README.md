@@ -34,33 +34,6 @@ Example order.json with recommended mods:
     // This is the difficulty setting, lower is easier, higher is harder; around 0.7 is similar to live tarkov.
     "barterCostMultiplier": 0.6,
 
-    // This turns on hardcore, which changes most cash items to barters (excluding ammo/mags)
-    "enableHardcore": false,
-
-    // These are the recommended settings for hardcore, feel free to change them if desired.
-    "hardcoreSettings": {
-
-        // This allows a few of the cheaper items to be purchasable with cash 
-        // Be aware: this isn't a 1:1 rouble value.
-        "cashItemCutoff": 10000,
-
-        // Disables the open flee market (you can still use it to look for trader items)
-        "disableFlee": true,
-
-        // Traders' loyalty requirement of cash spent is drastically reduced
-        // This is to compensate for less cash being used in general
-        "reduceTraderLoyaltySpendRequirement": true,
-
-        // Increases minimum buy counts from 1 > 5 for traded items 
-        "increaseMinBuyCounts": true,
-
-        // This is to balance the player using fence for everything 
-        "reduceTraderBuyPrice": true
-
-        // Excludes mags from the barter algorithm, turn this off to have to barter for them
-         "excludeMagBarters": true
-    },
-
     //Turn this on to figure out the correct custom trader name to add to the below "customTradersToInclude"
     "printUnkownTraders": false,
 

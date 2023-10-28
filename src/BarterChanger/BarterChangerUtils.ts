@@ -30,7 +30,7 @@ export const magParent = "5448bc234bdc2d3c308b4569"
 export const ammoParent = "5485a8684bdc2da71d8b4567"
 
 export const excludableCashParents = [ammoParent, specItemParent]
-if (config.hardcoreSettings.excludeMagBarters) excludableCashParents.push(magParent)
+// if (config.hardcoreSettings.excludeMagBarters) excludableCashParents.push(magParent)
 
 export const moneyType = new Set([
     "5696686a4bdc2da3298b456a",

@@ -2,15 +2,6 @@
     "enable": true,
     "seed": 2023,
     "barterCostMultiplier": 0.6,
-    "enableHardcore": false,
-    "hardcoreSettings": {
-        "cashItemCutoff": 10000,
-        "disableFlee": true,
-        "reduceTraderLoyaltySpendRequirement": true,
-        "increaseMinBuyCounts": true,
-        "reduceTraderBuyPrice": true,
-        "excludeMagBarters": true
-    },
     "printUnkownTraders": false,
     "customTradersToInclude": [
         "SteveTheExampleGuyThatHasSalewas",
