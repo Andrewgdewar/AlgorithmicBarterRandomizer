@@ -29,3 +29,4 @@ const GlobalValueSetup = (container) => {
     GlobalValues_1.globalValues.RagfairOfferService = container.resolve("RagfairOfferService");
 };
 exports.GlobalValueSetup = GlobalValueSetup;
+//# sourceMappingURL=BarterChanger.js.map

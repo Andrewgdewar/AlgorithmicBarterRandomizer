@@ -7,7 +7,26 @@ exports.globalValues = void 0;
 const config_json_1 = __importDefault(require("../../config/config.json"));
 const utils_1 = require("../utils");
 const BarterChangerUtils_1 = require("./BarterChangerUtils");
-const LogTextColor_1 = require("C:/snapshot/project/obj/models/spt/logging/LogTextColor");
+const LogTextColor_1 = require("C:/snapshot/project/obj-aki/models/spt/logging/LogTextColor");
+//   // This turns on hardcore, which changes most cash items to barters (excluding ammo/mags)
+//   "enableHardcore": false,
+//   // These are the recommended settings for hardcore, feel free to change them if desired.
+//   "hardcoreSettings": {
+//       // This allows a few of the cheaper items to be purchasable with cash 
+//       // Be aware: this isn't a 1:1 rouble value.
+//       "cashItemCutoff": 10000,
+//       // Disables the open flee market (you can still use it to look for trader items)
+//       "disableFlee": true,
+//       // Traders' loyalty requirement of cash spent is drastically reduced
+//       // This is to compensate for less cash being used in general
+//       "reduceTraderLoyaltySpendRequirement": true,
+//       // Increases minimum buy counts from 1 > 5 for traded items 
+//       "increaseMinBuyCounts": true,
+//       // This is to balance the player using fence for everything 
+//       "reduceTraderBuyPrice": true
+//       // Excludes mags from the barter algorithm, turn this off to have to barter for them
+//        "excludeMagBarters": true
+//   },
 // "enableHardcore": false,
 // "hardcoreSettings": {
 //     "cashItemCutoff": 10000,
@@ -18,6 +37,13 @@ const LogTextColor_1 = require("C:/snapshot/project/obj/models/spt/logging/LogTe
 //     "excludeMagBarters": true
 // },
 class globalValues {
+    static traderController;
+    static Logger;
+    static tables;
+    static RagfairOfferService;
+    static config = config_json_1.default;
+    static timeUntilNextUpdate = Date.now();
+    static pendingCountDown = false;
     static updateBarters(time) {
         if (time) {
             if (this.pendingCountDown)
@@ -262,6 +288,4 @@ class globalValues {
     }
 }
 exports.globalValues = globalValues;
-globalValues.config = config_json_1.default;
-globalValues.timeUntilNextUpdate = Date.now();
-globalValues.pendingCountDown = false;
+//# sourceMappingURL=GlobalValues.js.map

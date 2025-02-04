@@ -11,5 +11,14 @@
     "MeleeBarterItems": true,
     "GrenadeBarterItems": true,
     "debugCashItems": false,
+    "enableHardcore": true,
+    "hardcoreSettings": {
+        "cashItemCutoff": 10000,
+        "disableFlee": true,
+        "reduceTraderLoyaltySpendRequirement": true,
+        "increaseMinBuyCounts": true,
+        "reduceTraderBuyPrice": true,
+        "excludeMagBarters": true
+    },
     "debug": false
 }
