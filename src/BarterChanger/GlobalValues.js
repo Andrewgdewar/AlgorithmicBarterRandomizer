@@ -317,6 +317,7 @@ class globalValues {
                         barter[0] = [{ _tpl: traderCurrency, count: price }];
                         break;
                     default:
+                        break;
                         config_json_1.default.debug &&
                             this.Logger.logWithColor(`${getName(itemId)} - ${value}`, LogTextColor_1.LogTextColor.YELLOW);
                         let totalCost = 0;

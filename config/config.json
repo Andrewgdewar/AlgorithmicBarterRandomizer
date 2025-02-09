@@ -5,7 +5,8 @@
     "printUnkownTraders": true,
     "customTradersToInclude": [
         "Arena",
-        "БТР"
+        "БТР",
+        "Painter"
     ],
     "MedBarterItems": true,
     "MeleeBarterItems": true,
@@ -14,9 +15,9 @@
     "enableHardcore": true,
     "hardcoreSettings": {
         "disableFlee": true,
-        "reduceTraderLoyaltySpendRequirement": true,
-        "increaseMinBuyCounts": true,
-        "reduceTraderBuyPrice": true,
+        "reduceTraderLoyaltySpendRequirement": false,
+        "increaseMinBuyCounts": false,
+        "reduceTraderBuyPrice": false,
         "excludeMagBarters": false
     },
     "debug": false

@@ -454,6 +454,7 @@ export class globalValues {
 
             break;
           default:
+            break;
             config.debug &&
               this.Logger.logWithColor(
                 `${getName(itemId)} - ${value}`,
