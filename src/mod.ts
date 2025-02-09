@@ -1,16 +1,19 @@
 import { IPreSptLoadMod } from "@spt/models/external/IPreSptLoadMod";
-/* eslint-disable @typescript-eslint/naming-convention */
 import { DependencyContainer } from "tsyringe";
 import { IPostSptLoadMod } from "@spt/models/external/IPostSptLoadMod";
 import { enable } from "../config/config.json";
 import { BarterChanger, GlobalValueSetup } from "./BarterChanger/BarterChanger";
+import { globalValues } from "./BarterChanger/GlobalValues";
 
 class AlgorithmicBarterRandomizer implements IPreSptLoadMod, IPostSptLoadMod {
-  postSptLoad(container: DependencyContainer): void {
-    enable && GlobalValueSetup(container);
-  }
   preSptLoad(container: DependencyContainer): void {
     enable && BarterChanger(container);
+  }
+  postSptLoad(container: DependencyContainer): void {
+    if (enable) {
+      GlobalValueSetup(container);
+      globalValues.updateBarters();
+    }
   }
 }
 

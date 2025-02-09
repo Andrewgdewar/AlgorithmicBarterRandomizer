@@ -1,4 +1,4 @@
-import { ITemplateItem } from "@spt-aki/models/eft/common/tables/ITemplateItem";
+import { ITemplateItem } from "@spt/models/eft/common/tables/ITemplateItem";
 import config from "../config/config.json";
 
 const chars = " abcdefghijklmnopqrstuvwxyz1234567890".split("");

@@ -2,10 +2,10 @@
     "enable": true,
     "seed": 2023,
     "barterCostMultiplier": 0.6,
-    "printUnkownTraders": false,
+    "printUnkownTraders": true,
     "customTradersToInclude": [
-        "SteveTheExampleGuyThatHasSalewas",
-        "BobJustExampleBob"
+        "Arena",
+        "БТР"
     ],
     "MedBarterItems": true,
     "MeleeBarterItems": true,
@@ -13,12 +13,11 @@
     "debugCashItems": false,
     "enableHardcore": true,
     "hardcoreSettings": {
-        "cashItemCutoff": 10000,
         "disableFlee": true,
         "reduceTraderLoyaltySpendRequirement": true,
         "increaseMinBuyCounts": true,
         "reduceTraderBuyPrice": true,
-        "excludeMagBarters": true
+        "excludeMagBarters": false
     },
     "debug": false
 }
