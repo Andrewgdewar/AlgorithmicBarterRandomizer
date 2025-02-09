@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.excludedItemsList = exports.turnToCashType = exports.moneyType = exports.multipleCostType = exports.excludableCashParents = exports.bulletCostMultiplier = exports.simpleContainer = exports.containerParent = exports.ammoParent = exports.magParent = exports.knownInternalTraders = exports.excludableParents = exports.throwWeaponParent = exports.stackableItemParent = exports.specItemParent = exports.medsParent = exports.mapParent = exports.knifeParent = exports.keyParent = exports.infoParent = exports.compoundItemParent = void 0;
+exports.excludedItemsList = exports.turnToCashType = exports.moneyType = exports.multipleCostType = exports.excludableCashParents = exports.bulletCostMultiplier = exports.secureContainer = exports.simpleContainer = exports.containerParent = exports.ammoParent = exports.magParent = exports.knownInternalTraders = exports.excludableParents = exports.throwWeaponParent = exports.stackableItemParent = exports.specItemParent = exports.medsParent = exports.mapParent = exports.knifeParent = exports.keyParent = exports.infoParent = exports.compoundItemParent = void 0;
 const config_json_1 = __importDefault(require("../../config/config.json"));
 exports.compoundItemParent = "566162e44bdc2d3f298b4573";
 exports.infoParent = "5448ecbe4bdc2d60728b4568";
@@ -36,8 +36,10 @@ exports.magParent = "5448bc234bdc2d3c308b4569";
 exports.ammoParent = "5485a8684bdc2da71d8b4567";
 exports.containerParent = "5671435f4bdc2d96058b4569";
 exports.simpleContainer = "5795f317245977243854e041";
+exports.secureContainer = "5448bf274bdc2dfc2f8b456a";
 exports.bulletCostMultiplier = 10;
 exports.excludableCashParents = [
+    exports.secureContainer,
     exports.ammoParent,
     exports.specItemParent,
     exports.simpleContainer,
@@ -50,7 +52,11 @@ exports.moneyType = new Set([
     "569668774bdc2da2298b4568",
     "5449016a4bdc2d6f028b456f",
 ]);
-exports.turnToCashType = [exports.simpleContainer, exports.containerParent];
+exports.turnToCashType = [
+    exports.simpleContainer,
+    exports.containerParent,
+    exports.secureContainer,
+];
 exports.excludedItemsList = new Set([
     exports.containerParent,
     exports.simpleContainer,

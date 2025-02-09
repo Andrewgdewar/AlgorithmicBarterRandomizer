@@ -294,6 +294,28 @@ class globalValues {
                         }));
                         barter[0] = newCashBarter;
                         break;
+                    case (0, utils_1.checkParentRecursive)(itemId, items, BarterChangerUtils_1.turnToCashType):
+                        let price = getPrice(itemId);
+                        // console.log(items[itemId]._name, price);
+                        const isUSD = trader.base.currency === "USD";
+                        if (isUSD) {
+                            price = Math.round(price / 151);
+                        }
+                        const traderCurrency = isUSD
+                            ? "5696686a4bdc2da3298b456a"
+                            : "5449016a4bdc2d6f028b456f";
+                        const toCashOfferId = getTradeOfferId(traderBartersOnFlea, itemId, barter[0][0]._tpl);
+                        const offerForUpdate = this.RagfairOfferService.getOfferByOfferId(toCashOfferId);
+                        offerForUpdate.requirements = [
+                            {
+                                _tpl: traderCurrency,
+                                count: price,
+                                onlyFunctional: false,
+                            },
+                        ];
+                        this.RagfairOfferService.addOffer(offerForUpdate);
+                        barter[0] = [{ _tpl: traderCurrency, count: price }];
+                        break;
                     default:
                         config_json_1.default.debug &&
                             this.Logger.logWithColor(`${getName(itemId)} - ${value}`, LogTextColor_1.LogTextColor.YELLOW);

@@ -30,10 +30,12 @@ export const magParent = "5448bc234bdc2d3c308b4569";
 export const ammoParent = "5485a8684bdc2da71d8b4567";
 export const containerParent = "5671435f4bdc2d96058b4569";
 export const simpleContainer = "5795f317245977243854e041";
+export const secureContainer = "5448bf274bdc2dfc2f8b456a";
 
 export const bulletCostMultiplier = 10;
 
 export const excludableCashParents = [
+  secureContainer,
   ammoParent,
   specItemParent,
   simpleContainer,
@@ -49,7 +51,11 @@ export const moneyType = new Set([
   "5449016a4bdc2d6f028b456f",
 ]);
 
-export const turnToCashType = [simpleContainer, containerParent];
+export const turnToCashType = [
+  simpleContainer,
+  containerParent,
+  secureContainer,
+];
 
 export const excludedItemsList = new Set([
   containerParent,
